@@ -80,6 +80,8 @@ import org.klnusbaum.udj.exceptions.BannedException;
  */
 public class ServerConnection{
 
+  private static final String API_URL_PREFIX = "/udj/0_6/";
+
   private static final String TAG = "ServerConnection";
   private static final String PARAM_USERNAME = "username";
 
@@ -155,7 +157,7 @@ public class ServerConnection{
     try{
       AUTH_URI = new URI(
         NETWORK_PROTOCOL, null,
-        SERVER_HOST, SERVER_PORT, "/udj/0_6/auth", null, null);
+        SERVER_HOST, SERVER_PORT, API_URL_PREFIX + "auth", null, null);
     }
     catch(URISyntaxException e){
       //TODO should never get here but I should do something if it does.
@@ -416,7 +418,7 @@ public class ServerConnection{
     try{
       URI playersQuery = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT, 
-        "/udj/0_6/players/" + location.getLatitude() + "/" + location.getLongitude(),
+        API_URL_PREFIX + "players/" + location.getLatitude() + "/" + location.getLongitude(),
         null, null);
       JSONArray players = new JSONArray(doSimpleGet(playersQuery, ticketHash));
       return Player.fromJSONArray(players);
@@ -435,7 +437,7 @@ public class ServerConnection{
     try{
       URI playersQuery = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT, 
-        "/udj/0_6/players",
+        API_URL_PREFIX + "players",
         PARAM_PLAYER_NAME+"="+query, null);
       JSONArray players = new JSONArray(doSimpleGet(playersQuery, ticketHash));
       return Player.fromJSONArray(players);
@@ -463,7 +465,7 @@ public class ServerConnection{
     try{
       URI uri  = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT, 
-        "/udj/0_6/players/" + playerId + "/users/user",
+        API_URL_PREFIX + "players/" + playerId + "/users/user",
         null, null);
       final HttpResponse resp;
       if(password == null || password.equals("")){
@@ -512,7 +514,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT, 
-        "/udj/0_6/players/"+playerId+"/active_playlist",
+        API_URL_PREFIX + "players/"+playerId+"/active_playlist",
         null, null);
       return new JSONObject(doPlayerRelatedGet(uri, authToken));
     }
@@ -531,7 +533,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/available_music",
+        API_URL_PREFIX + "players/"+playerId+"/available_music",
         "query="+query, null);
       JSONArray libEntries = new JSONArray(doPlayerRelatedGet(uri, authToken));
       return LibraryEntry.fromJSONArray(libEntries);
@@ -549,7 +551,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/available_music/artists",
+        API_URL_PREFIX + "players/"+playerId+"/available_music/artists",
         null, null);
       JSONArray artists = new JSONArray(doPlayerRelatedGet(uri, authToken));
       return toStringList(artists);
@@ -568,7 +570,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/available_music/artists/"+artistQuery,
+        API_URL_PREFIX + "players/"+playerId+"/available_music/artists/"+artistQuery,
         null, null);
       JSONArray libEntries = new JSONArray(doPlayerRelatedGet(uri, authToken));
       return LibraryEntry.fromJSONArray(libEntries);
@@ -587,7 +589,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/available_music/random_songs",
+        API_URL_PREFIX + "players/"+playerId+"/available_music/random_songs",
         "max_randoms="+String.valueOf(max), null);
       JSONArray libEntries = new JSONArray(doPlayerRelatedGet(uri, authToken));
       return LibraryEntry.fromJSONArray(libEntries);
@@ -605,7 +607,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/recently_played",
+        API_URL_PREFIX + "players/"+playerId+"/recently_played",
         "max_songs="+String.valueOf(max), null);
       JSONArray recentlyPlayedEntries = new JSONArray(doPlayerRelatedGet(uri, authToken));
       return LibraryEntry.fromRecentlyPlayedJSONArray(recentlyPlayedEntries);
@@ -626,7 +628,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/active_playlist/songs/"+libId,
+        API_URL_PREFIX + "players/"+playerId+"/active_playlist/songs/"+libId,
         null, null);
       Log.d(TAG, "Add song to active playlist: " + libId);
       doPlayerRelatedPut(uri, authToken, ""); 
@@ -644,7 +646,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
           NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-          "/udj/0_6/players/"+playerId+"/active_playlist/songs/"+libId,
+          API_URL_PREFIX + "players/"+playerId+"/active_playlist/songs/"+libId,
           null, null);
       Log.d(TAG, "Add remove song from active playlist: " + libId);
       doPlayerRelatedDelete(uri, authToken);
@@ -661,7 +663,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
           NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-          "/udj/0_6/players/"+playerId+"/current_song",
+          API_URL_PREFIX + "players/"+playerId+"/current_song",
           null, null);
       Log.d(TAG, "Set current song to: " + libId);
       doPlayerRelatedPost(uri, authToken, "lib_id="+libId, false);
@@ -679,7 +681,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
           NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-          "/udj/0_6/players/"+playerId+"/state",
+          API_URL_PREFIX + "players/"+playerId+"/state",
           null, null);
       Log.d(TAG, "Setting playback state: " + desiredPlaybackState);
       String plState = "";
@@ -704,7 +706,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
           NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-          "/udj/0_6/players/"+playerId+"/volume",
+          API_URL_PREFIX + "players/"+playerId+"/volume",
           null, null);
       Log.d(TAG, "Setting player volume: " + desiredVolume);
       doPlayerRelatedPost(uri, authToken, "volume="+String.valueOf(desiredVolume), false);
@@ -734,7 +736,7 @@ public class ServerConnection{
     try{
       URI uri = new URI(
         NETWORK_PROTOCOL, null, SERVER_HOST, SERVER_PORT,
-        "/udj/0_6/players/"+playerId+"/active_playlist/songs/" + libId +"/" + voteString,
+        API_URL_PREFIX + "players/"+playerId+"/active_playlist/songs/" + libId +"/" + voteString,
         null, null);
       doPlayerRelatedPost(uri, authToken, null, false);
     }
