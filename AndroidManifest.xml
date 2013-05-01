@@ -25,21 +25,8 @@
 
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="16"/>
 
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
-    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
-    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!--
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    -->
-    <uses-permission
-        android:name="android.permission.READ_SYNC_STATS" />
-    <uses-permission
-        android:name="android.permission.READ_SYNC_SETTINGS" />
-    <uses-permission
-        android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission
         android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission
@@ -93,7 +80,6 @@
         <activity 
             android:name=".auth.AuthActivity"
             android:excludeFromRecents="true"
-            android:configChanges="orientation"
         />
 
 
@@ -107,34 +93,9 @@
          android:theme="@style/Theme.Sherlock"
        />
 
-
        <activity
          android:name="NeedUpdateActivity"
        />
-
-        <service
-            android:name=".auth.AuthService"
-            android:exported="true"
-        >
-          <intent-filter>
-              <action android:name="android.accounts.AccountAuthenticator" />
-          </intent-filter>
-          <meta-data
-            android:name="android.accounts.AccountAuthenticator"
-            android:resource="@xml/authenticator"
-          />
-        </service>
-
-        <service
-            android:name=".network.SyncService"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
-            </intent-filter>
-            <meta-data
-                android:name="android.content.SyncAdapter"
-                android:resource="@xml/syncadapter" />
-        </service>
 
         <service
             android:name=".network.PlaylistSyncService"
@@ -145,12 +106,6 @@
             android:name=".network.PlayerCommService"
             android:exported="true"
         />
-
-        <receiver android:name="Toaster">
-          <intent-filter>
-            <action android:name="org.klnusbaum.udj.ShowToast"/>
-          </intent-filter>
-        </receiver>
 
         <provider android:name=".MusicSearchSuggestionProvider"
           android:authorities="org.klnusbaum.udj.MusicSearchSuggestionProvider"
