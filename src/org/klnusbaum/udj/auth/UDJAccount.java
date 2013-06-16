@@ -10,41 +10,41 @@ import android.content.Context;
 public class UDJAccount{
 
   private String userId;
-  private String authToken;
+  private String ticketHash;
   private static final String ACCOUNT_FILE_NAME="account_info.json";
   private static final String USER_ID_FIELD_NAME="user_id";
-  private static final String AUTH_TOKEN_FIELD_NAME="auth_token";
+  private static final String TICKET_HASH_FIELD_NAME="ticket_hash";
   private static UDJAccount theAccount = null;
 
   public String getUserId(){
     return userId;
   }
 
-  public String getAuthToken(){
-    return authToken;
+  public String getTicketHash(){
+    return ticketHash;
   }
 
-  private UDJAccount(String userId, String authToken){
+  private UDJAccount(String userId, String ticketHash){
     this.userId = userId;
-    this.authToken = authToken;
+    this.ticketHash = ticketHash;
   }
 
-  public static void createUDJAccount(Context context, String userId, String authToken){
+  public static void createUDJAccount(Context context, String userId, String ticketHash){
     JSONObject accountObject = new JSONObject();
     accountObject.put(USER_ID_FIELD_NAME, userId);
-    accountObject.put(AUTH_TOKEN_FIELD_NAME, authToken);
+    accountObject.put(TICKET_HASH_FIELD_NAME, ticketHash);
     FileOutputStream accountFile = context.openFileOutputStream(ACCOUNT_FILE_NAME,
                                                                   Context.MODE_PRIVATE);
     accountFile.write(accountObject.toString().getBytes());
     accountFile.close();
-    theAccount = new UDJAccount(userId, authToken);
+    theAccount = new UDJAccount(userId, ticketHash);
   }
 
   public static UDJAccount getUDJAccount(Context context) throws NoAccountException{
     if(theAccount == null){
       JSONObject accountJSON = getAccountJSON(context);
       theAccount = new UDJAccount(accountJSON.getString(USER_ID_FIELD_NAME),
-                                  accountJSON.getString(AUTH_TOKEN_FIELD_NAME));
+                                  accountJSON.getString(TICKET_HASH_FIELD_NAME));
     }
     return theAccount;
   }
