@@ -28,6 +28,8 @@ import android.view.ViewGroup;
 import android.view.LayoutInflater;
 import android.os.Bundle;
 
+import org.klnusbaum.udj.R;
+
 public class AuthActivity extends SherlockFragmentActivity{
 
   @Override
@@ -38,7 +40,7 @@ public class AuthActivity extends SherlockFragmentActivity{
     if(icicle == null){
       FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
       UDJLoginFragment udjLoginFragment = new UDJLoginFragment();
-      ft.add(R.id.content, udjLoginFragment)
+      ft.add(R.id.content, udjLoginFragment);
       ft.commit();
     }
   }

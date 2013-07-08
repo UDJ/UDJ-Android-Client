@@ -80,7 +80,7 @@ public class ArtistsLoader
     String playerId = account.getUserData(getContext(), Constants.LAST_PLAYER_ID_DATA);
 
     try{
-      return getArtists(playerId, authToken);
+      return getArtists(playerId, ticketHash);
     }
     catch(JSONException e){
       return new ArtistsResult(null, 

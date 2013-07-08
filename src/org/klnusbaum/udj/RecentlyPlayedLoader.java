@@ -29,6 +29,7 @@ import org.json.JSONException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.ParseException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.network.ServerConnection;
 import org.klnusbaum.udj.containers.LibraryEntry;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;

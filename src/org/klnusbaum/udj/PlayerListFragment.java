@@ -86,6 +86,7 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
   private Location lastKnown = null;
   private SearchType searchType;
   private String nameQuery;
+  private UDJAccount account;
 
   private BroadcastReceiver playerJoinedReceiver = new BroadcastReceiver(){
     public void onReceive(Context context, Intent intent){
@@ -112,7 +113,7 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
     super.onActivityCreated(icicle);
 
     try{
-      account = UDJAccount.getUDJAccount(getActivity());
+      this.account = UDJAccount.getUDJAccount(getActivity());
     }
     catch(NoAccountException e){
       Intent getAccountIntent = new Intent(getActivity(), AuthActivity.class);
@@ -272,8 +273,8 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
 
   public void joinPlayer(Player toJoin, String password){
     Log.d(TAG, "Joining Player with id: " + toJoin.getId());
-    am.setUserData(
-      account,
+    account.setUserData(
+      getActivity(),
       Constants.PLAYER_STATE_DATA,
       String.valueOf(Constants.JOINING_PLAYER));
     showProgress();
@@ -417,9 +418,9 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
 
   private void handlePlayerJoinFail(){
     PlayerJoinError joinError = PlayerJoinError.valueOf(
-      am.getUserData(account, Constants.PLAYER_JOIN_ERROR));
-    am.setUserData(
-      account,
+      account.getUserData(getActivity(), Constants.PLAYER_JOIN_ERROR));
+    account.setUserData(
+      getActivity(),
       Constants.PLAYER_STATE_DATA,
       String.valueOf(Constants.NOT_IN_PLAYER));
     DialogFragment newFrag = new PlayerJoinFailDialog();

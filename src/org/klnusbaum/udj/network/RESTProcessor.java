@@ -23,16 +23,10 @@ import java.util.ArrayList;
 
 import android.content.Context;
 import android.content.Intent;
-//import android.content.ContentResolver;
-//import android.content.ContentProviderOperation;
-//import android.content.OperationApplicationException;
 import android.util.Log;
-//import android.os.RemoteException;
-import android.accounts.Account;
-import android.accounts.AccountManager;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.Constants;
-//import org.klnusbaum.udj.UDJPlayerProvider;
 import org.klnusbaum.udj.containers.ActivePlaylistEntry;
 import org.klnusbaum.udj.Utils;
 
@@ -45,7 +39,7 @@ public class RESTProcessor{
 
   public static final String TAG = "RESTProcessor";
 
-  private static void checkVolume(Context context, Account account, int volume){
+  private static void checkVolume(Context context, UDJAccount account, int volume){
     if(Utils.getPlayerVolume(context, account) != volume){
       account.setUserData(context, Constants.PLAYER_VOLUME_DATA, String.valueOf(volume));
       Intent playerVolumeChangedBroadcast = new Intent(Constants.BROADCAST_VOLUME_CHANGED);
@@ -54,7 +48,7 @@ public class RESTProcessor{
     }
   }
 
-  private static void checkPlaybackState(Context context, Account account, String playbackState){
+  private static void checkPlaybackState(Context context, UDJAccount account, String playbackState){
     int plState = Constants.PLAYING_STATE;
     if(playbackState.equals("playing")){
       plState = Constants.PLAYING_STATE;
@@ -72,12 +66,12 @@ public class RESTProcessor{
 
   public static List<ActivePlaylistEntry> processActivePlaylist(
     JSONObject activePlaylist,
-    Account account,
+    UDJAccount account,
     Context context)
     throws JSONException
   {
-    checkPlaybackState(context, activePlaylist.getString("state"));
-    checkVolume(context, activePlaylist.getInt("volume"));
+    checkPlaybackState(context, account, activePlaylist.getString("state"));
+    checkVolume(context, account, activePlaylist.getInt("volume"));
     ActivePlaylistEntry currentSong = 
       ActivePlaylistEntry.valueOf(activePlaylist.getJSONObject("current_song"));
     currentSong.setCurrentSong(true);

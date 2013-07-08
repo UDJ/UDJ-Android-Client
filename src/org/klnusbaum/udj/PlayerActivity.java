@@ -101,7 +101,7 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
   }
 
   public void onBackPressed(){
-      Utils.leavePlayer(context, account);
+      Utils.leavePlayer(this, account);
       finish();
   }
 
@@ -155,8 +155,8 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
   }
 
   public boolean onCreateOptionsMenu(Menu menu){
-    if(Utils.isCurrentPlayerOwner(context, account)){
-      int playbackState = Utils.getPlaybackState(context, account);
+    if(Utils.isCurrentPlayerOwner(this, account)){
+      int playbackState = Utils.getPlaybackState(this, account);
       if(playbackState == Constants.PLAYING_STATE){
         menu.add(getString(R.string.pause))
           .setIcon(R.drawable.ab_pause)
@@ -212,7 +212,7 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
   }
 
   private void changePlaybackMenuOption(int newPlaybackState){
-    account.setUserData(context, Constants.PLAYBACK_STATE_DATA, String.valueOf(newPlaybackState));
+    account.setUserData(this, Constants.PLAYBACK_STATE_DATA, String.valueOf(newPlaybackState));
     invalidateOptionsMenu();
   }
 
@@ -278,9 +278,11 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
       volumeBar = (SeekBar)volumeEditor.findViewById(R.id.volume_selector);
       volumeDisplay = (TextView)volumeEditor.findViewById(R.id.volume_display);
       volumeBar.setMax(10);
-      volumeBar.setProgress(Utils.getPlayerVolume(context, getAccount()));
+      int playerVolume = Utils.getPlayerVolume(getActivity(), getAccount());
+
+      volumeBar.setProgress(playerVolume);
       volumeBar.setPadding(volumeBar.getThumbOffset()+2, 2, volumeBar.getThumbOffset()+2, 2);
-      volumeDisplay.setText(String.valueOf(Utils.getPlayerVolume(context, getAccount())));
+      volumeDisplay.setText(String.valueOf(playerVolume));
       volumeBar.setOnSeekBarChangeListener(this);
 
       return toReturn;

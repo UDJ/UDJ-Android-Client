@@ -197,7 +197,7 @@ public abstract class PlayerExceptionListenerActivity extends SherlockFragmentAc
     }
     
     private void finalizePlayer(){
-      Utils.leavePlayer(context, getAccount());
+      Utils.leavePlayer(getActivity(), getAccount());
       getActivity().setResult(Activity.RESULT_OK);
       getActivity().finish();
     }

@@ -26,7 +26,7 @@ import org.klnusbaum.udj.auth.UDJAccount;
 
 public class ArtistSearchFragment extends SearchFragment{
 
-  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account UDJAccount){
+  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(UDJAccount UDJAccount){
     String artistQuery = getActivity().getIntent().getStringExtra(SearchManager.QUERY);
     return new ArtistSearchLoader(getActivity(), artistQuery, account);
   }

@@ -41,7 +41,7 @@ public abstract class SearchFragment extends PullToRefreshListFragment
 
   /** Adapter used to help display the contents of the library. */
   private MusicSearchAdapter searchAdapter;
-  private UDJAccount account;
+  protected UDJAccount account;
 
 
   @Override
@@ -49,7 +49,7 @@ public abstract class SearchFragment extends PullToRefreshListFragment
     super.onActivityCreated(savedInstanceState);
 
     try{
-      account = UDJAccount.getUDJAccount();
+      this.account = UDJAccount.getUDJAccount(getActivity());
     }
     catch(NoAccountException e){
       Log.wtf(TAG, "HOLY shit! We made a SearchFragment somehow with out " +

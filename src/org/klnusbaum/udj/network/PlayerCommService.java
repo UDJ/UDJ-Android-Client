@@ -31,6 +31,7 @@ import org.json.JSONException;
 import org.apache.http.ParseException;
 import org.apache.http.auth.AuthenticationException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.Constants;
 import org.klnusbaum.udj.Utils;
 import org.klnusbaum.udj.exceptions.PlayerInactiveException;
@@ -83,7 +84,7 @@ public class PlayerCommService extends IntentService{
       return;
     }
 
-    String userId = account.getUserData(context, Constants.USER_ID_DATA);
+    String userId = account.getUserData(this, Constants.USER_ID_DATA);
     String playerId = intent.getStringExtra(Constants.PLAYER_ID_EXTRA);
     String ownerId = intent.getStringExtra(Constants.PLAYER_OWNER_ID_EXTRA);
     if(userId.equals(ownerId)){
@@ -91,12 +92,11 @@ public class PlayerCommService extends IntentService{
       return;
     }
 
-    String authToken;
     String password = "";
     boolean hasPassword = false;
     //TODO hanle error if account isn't provided
     //TODO handle if player id isn't provided
-    ticket_hash = account.getTicketHash();
+    String ticketHash = account.getTicketHash();
     if(intent.hasExtra(Constants.PLAYER_PASSWORD_EXTRA)){
       Log.d(TAG, "password given for player");
       hasPassword = true;
@@ -156,9 +156,9 @@ public class PlayerCommService extends IntentService{
   private void setLoggedInToPlayer(Intent joinPlayerIntent, UDJAccount account, String playerId){
     setPlayerData(joinPlayerIntent, account);
     account.setUserData(
-        context, Constants.LAST_PLAYER_ID_DATA, playerId);
+       this, Constants.LAST_PLAYER_ID_DATA, playerId);
     account.setUserData(
-        context, 
+        this, 
         Constants.PLAYER_STATE_DATA, 
         String.valueOf(Constants.IN_PLAYER));
     Log.d(TAG, "Sending joined player broadcast");
@@ -171,11 +171,11 @@ public class PlayerCommService extends IntentService{
     PlayerJoinError error)
   {
     account.setUserData(
-      context,
+      this,
       Constants.PLAYER_STATE_DATA,
       String.valueOf(Constants.PLAYER_JOIN_FAILED));
     account.setUserData(
-      context,
+      this,
       Constants.PLAYER_JOIN_ERROR,
       error.toString());
     Intent playerJoinFailedIntent =
@@ -186,24 +186,24 @@ public class PlayerCommService extends IntentService{
 
   private void setPlayerData(Intent intent, UDJAccount account){
     account.setUserData(
-      context,
-      Constants.PLAYER_NaccountE_DATA,
-      intent.getStringExtra(Constants.PLAYER_NaccountE_EXTRA));
+      this,
+      Constants.PLAYER_NAME_DATA,
+      intent.getStringExtra(Constants.PLAYER_NAME_EXTRA));
     account.setUserData(
-      context,
-      Constants.PLAYER_HOSTNaccountE_DATA,
+      this,
+      Constants.PLAYER_HOSTNAME_DATA,
       intent.getStringExtra(Constants.PLAYER_OWNER_EXTRA));
     account.setUserData(
-      context,
+      this,
       Constants.PLAYER_HOST_ID_DATA,
       intent.getStringExtra(Constants.PLAYER_OWNER_ID_EXTRA));
     account.setUserData(
-      context,
+      this,
       Constants.PLAYER_LAT_DATA,
       String.valueOf(intent.getDoubleExtra(Constants.PLAYER_LAT_EXTRA, -100.0))
     );
     account.setUserData(
-      context,
+      this,
       Constants.PLAYER_LONG_DATA,
       String.valueOf(intent.getDoubleExtra(Constants.PLAYER_LONG_EXTRA, -100.0))
     );

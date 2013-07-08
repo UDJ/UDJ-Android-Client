@@ -95,15 +95,8 @@ public class PlaylistLoader extends AsyncTaskLoader<PlaylistLoader.PlaylistResul
       return new PlaylistResult(null, PlaylistLoadError.SERVER_ERROR);
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.d(TAG, "soft auth failure");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-        return attemptLoad(false);
-      }
-      else{
-        Log.d(TAG, "hard auth failure");
-        return new PlaylistResult(null, PlaylistLoadError.AUTHENTICATION_ERROR);
-      }
+      Log.d(TAG, "hard auth failure");
+      return new PlaylistResult(null, PlaylistLoadError.AUTHENTICATION_ERROR);
     }
     catch(PlayerInactiveException e){
       return new PlaylistResult(null, PlaylistLoadError.PLAYER_INACTIVE_ERROR);

@@ -39,6 +39,7 @@ import org.json.JSONException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.ParseException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.Constants;
 import org.klnusbaum.udj.R;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;
@@ -68,19 +69,19 @@ public class PlaylistSyncService extends IntentService{
   public void onHandleIntent(Intent intent){
     final UDJAccount account =
       (UDJAccount)intent.getParcelableExtra(Constants.ACCOUNT_EXTRA);
-    final String playerId = account.getUserData(context, Constants.LAST_PLAYER_ID_DATA);
+    final String playerId = account.getUserData(this, Constants.LAST_PLAYER_ID_DATA);
     //TODO handle error if playerId is bad
     if(intent.getAction().equals(Intent.ACTION_INSERT)){
       if(intent.getData().equals(Constants.PLAYLIST_URI)){
         String libId = intent.getStringExtra(Constants.LIB_ID_EXTRA);
-        addSongToPlaylist(account, playerId, libId, true, intent);
+        addSongToPlaylist(account, playerId, libId, intent);
       }
       else if(intent.getData().equals(Constants.VOTES_URI)){
         //TODO handle if lib id is bad
         String libId = intent.getStringExtra(Constants.LIB_ID_EXTRA);
         //TODO handle if votetype is bad
         int voteWeight = intent.getIntExtra(Constants.VOTE_WEIGHT_EXTRA,0); 
-        voteOnSong(account, playerId, libId, voteWeight, true);
+        voteOnSong(account, playerId, libId, voteWeight);
       }
     }
     else if(intent.getAction().equals(Intent.ACTION_DELETE)){
@@ -89,24 +90,24 @@ public class PlaylistSyncService extends IntentService{
         Log.d(TAG, "In plalist syncservice, about to insert song into remove requests");
         //TODO handle if Playlist id is bad.
         String libId = intent.getStringExtra(Constants.LIB_ID_EXTRA);
-        removeSongFromPlaylist(account, playerId, libId, true, intent);
+        removeSongFromPlaylist(account, playerId, libId, intent);
       }
     }
     else if(intent.getAction().equals(Constants.ACTION_SET_CURRENT_SONG)){
       Log.d(TAG, "Handling setting current song");
       String libId = intent.getStringExtra(Constants.LIB_ID_EXTRA);
-      setCurrentSong(account, playerId, libId, true, intent);
+      setCurrentSong(account, playerId, libId, intent);
     }
     else if(intent.getAction().equals(Constants.ACTION_SET_PLAYBACK)){
-      setPlaybackState(intent, account, playerId, true);
+      setPlaybackState(intent, account, playerId);
     }
     else if(intent.getAction().equals(Constants.ACTION_SET_VOLUME)){
-      setPlayerVolume(intent, account, playerId, true);
+      setPlayerVolume(intent, account, playerId);
     }
   }
 
   private void setCurrentSong(
-    Account account,
+    UDJAccount account,
     String playerId,
     String libId,
     Intent originalIntent)
@@ -119,12 +120,12 @@ public class PlaylistSyncService extends IntentService{
       this.sendBroadcast(setCurrentComplete);
     }
     catch(IOException e){
-      alertSetSongException(account, originalIntent);
+      alertSetSongException(originalIntent);
       Log.e(TAG, "IO exception when setting song");
       Log.e(TAG, e.getMessage());
     }
     catch(AuthenticationException e){
-      alertSetSongException(account, originalIntent);
+      alertSetSongException(originalIntent);
       Log.e(TAG, "Hard Authentication exception when setting song");
     }
     catch(PlayerInactiveException e){
@@ -141,10 +142,9 @@ public class PlaylistSyncService extends IntentService{
 
 
   private void addSongToPlaylist(
-    Account account,
+    UDJAccount account,
     String playerId,
     String libId,
-    boolean attemptReauth,
     Intent originalIntent)
   {
     String ticketHash = account.getTicketHash();
@@ -154,20 +154,20 @@ public class PlaylistSyncService extends IntentService{
           playerId, libId, ticketHash);
     }
     catch(JSONException e){
-      alertAddSongException(account, originalIntent);
+      alertAddSongException(originalIntent);
       Log.e(TAG, "JSON exception when adding to playist");
     }
     catch(ParseException e){
-      alertAddSongException(account, originalIntent);
+      alertAddSongException(originalIntent);
       Log.e(TAG, "Parse exception when adding to playist");
     }
     catch(IOException e){
-      alertAddSongException(account, originalIntent);
+      alertAddSongException(originalIntent);
       Log.e(TAG, "IO exception when adding to playist");
       Log.e(TAG, e.getMessage());
     }
     catch(AuthenticationException e){
-      alertAddSongException(account, originalIntent);
+      alertAddSongException(originalIntent);
       Log.e(TAG, "Hard Authentication exception when adding to playist");
     }
     catch(PlayerInactiveException e){
@@ -184,7 +184,7 @@ public class PlaylistSyncService extends IntentService{
 
   }
 
-  private void removeSongFromPlaylist(Account account, String playerId, String libId, Intent originalIntent)
+  private void removeSongFromPlaylist(UDJAccount account, String playerId, String libId, Intent originalIntent)
   {
     String ticketHash = account.getTicketHash();
 
@@ -195,16 +195,16 @@ public class PlaylistSyncService extends IntentService{
       this.sendBroadcast(removeSongComplete);
     }
     catch(ParseException e){
-      alertRemoveSongException(account, originalIntent);
+      alertRemoveSongException(originalIntent);
       Log.e(TAG, "Parse exception when removing from playist");
     }
     catch(IOException e){
-      alertRemoveSongException(account, originalIntent);
+      alertRemoveSongException(originalIntent);
       Log.e(TAG, "IO exception when removing from playist");
       Log.e(TAG, e.getMessage());
     }
     catch(AuthenticationException e){
-      alertRemoveSongException(account, originalIntent);
+      alertRemoveSongException(originalIntent);
       Log.e(TAG, "Hard Authentication exception when removing from playist");
     }
     catch(PlayerInactiveException e){
@@ -219,11 +219,11 @@ public class PlaylistSyncService extends IntentService{
     }
   }
 
-  private void voteOnSong(Account account, String playerId, String libId, int voteWeight){
+  private void voteOnSong(UDJAccount account, String playerId, String libId, int voteWeight){
     String ticketHash = account.getTicketHash();
 
     try{
-      ServerConnection.voteOnSong(playerId, libId, voteWeight, authToken);
+      ServerConnection.voteOnSong(playerId, libId, voteWeight, ticketHash);
       Intent voteCompleteBroadcast = new Intent(Constants.BROADCAST_VOTE_COMPLETED);
       this.sendBroadcast(voteCompleteBroadcast);
     }
@@ -260,12 +260,12 @@ public class PlaylistSyncService extends IntentService{
     }
     catch(IOException e){
       Log.e(TAG, "IO exception in set volume" );
-      alertSetVolumeException(account, intent);
+      alertSetVolumeException(intent);
       return;
     }
     catch(AuthenticationException e){
       Log.e(TAG, "Hard Authentication exception when setting volume");
-      alertSetVolumeException(account, intent);
+      alertSetVolumeException(intent);
       return;
     }
     catch(PlayerInactiveException e){
@@ -283,7 +283,7 @@ public class PlaylistSyncService extends IntentService{
   }
 
 
-  private void setPlaybackState(Intent intent, Account account, String playerId)
+  private void setPlaybackState(Intent intent, UDJAccount account, String playerId)
   {
     String authToken = account.getTicketHash();
 
@@ -293,11 +293,11 @@ public class PlaylistSyncService extends IntentService{
     }
     catch(IOException e){
       Log.e(TAG, "IO exception in set playback" );
-      alertSetPlaybackException(account, intent);
+      alertSetPlaybackException(intent);
       return;
     }
     catch(AuthenticationException e){
-      alertSetPlaybackException(account, intent);
+      alertSetPlaybackException(intent);
       Log.e(TAG, "Hard Authentication exception when setting playback state");
     }
     catch(PlayerInactiveException e){
@@ -314,9 +314,8 @@ public class PlaylistSyncService extends IntentService{
     }
   }
 
-  private void alertSetVolumeException(Account account, Intent originalIntent){
+  private void alertSetVolumeException(Intent originalIntent){
     alertException(
-      account,
       originalIntent,
       R.string.set_volume_failed_title,
       R.string.set_volume_failed_content,
@@ -325,9 +324,8 @@ public class PlaylistSyncService extends IntentService{
   }
 
 
-  private void alertSetPlaybackException(Account account, Intent originalIntent){
+  private void alertSetPlaybackException(Intent originalIntent){
     alertException(
-      account,
       originalIntent,
       R.string.set_playback_failed_title,
       R.string.set_playback_failed_content,
@@ -336,9 +334,8 @@ public class PlaylistSyncService extends IntentService{
   }
 
 
-  private void alertAddSongException(Account account, Intent originalIntent){
+  private void alertAddSongException(Intent originalIntent){
     alertException(
-      account,
       originalIntent,
       R.string.song_add_failed_title,
       R.string.song_add_failed_content,
@@ -346,9 +343,8 @@ public class PlaylistSyncService extends IntentService{
     );
   }
 
-  private void alertRemoveSongException(Account account, Intent originalIntent){
+  private void alertRemoveSongException(Intent originalIntent){
     alertException(
-      account,
       originalIntent,
       R.string.song_remove_failed_title,
       R.string.song_remove_failed_content,
@@ -356,16 +352,15 @@ public class PlaylistSyncService extends IntentService{
     );
   }
 
-  private void alertSetSongException(Account account, Intent originalIntent){
+  private void alertSetSongException(Intent originalIntent){
     alertException(
-      account,
       originalIntent,
       R.string.song_set_failed_title,
       R.string.song_set_failed_content,
       SONG_SET_EXCEPTION_ID);
   }
 
-  private void alertException(Account account, Intent originalIntent,
+  private void alertException(Intent originalIntent,
     int titleRes, int contentRes, int notificationId)
   {
 
