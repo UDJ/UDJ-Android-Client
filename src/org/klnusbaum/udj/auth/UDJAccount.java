@@ -19,8 +19,10 @@
 package org.klnusbaum.udj.auth;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -31,6 +33,7 @@ import java.util.Scanner;
 import android.content.Context;
 import android.os.Parcelable;
 import android.os.Parcel;
+import android.util.Log;
 
 import org.klnusbaum.udj.exceptions.NoAccountException;
 
@@ -43,6 +46,7 @@ public class UDJAccount implements Parcelable{
   private static final String TICKET_HASH_FIELD_NAME="ticket_hash";
   private static final String DATA_FILE_PREFIX="data_";
   private static UDJAccount theAccount = null;
+  private static final String TAG = "UDJAccount";
 
 
   public int describeContents(){
@@ -87,12 +91,24 @@ public class UDJAccount implements Parcelable{
 
   public static void createUDJAccount(Context context, String userId, String ticketHash){
     JSONObject accountObject = new JSONObject();
-    accountObject.put(USER_ID_FIELD_NAME, userId);
-    accountObject.put(TICKET_HASH_FIELD_NAME, ticketHash);
-    FileOutputStream accountFile = context.openFileOutput(ACCOUNT_FILE_NAME,
+
+    try{
+      accountObject.put(USER_ID_FIELD_NAME, userId);
+      accountObject.put(TICKET_HASH_FIELD_NAME, ticketHash);
+    }
+    catch(JSONException e){
+      Log.wtf(TAG, "Why the hell am I getting a JSON exception when I'm just populating a JSONObject with data. This makes no sense.");
+    }
+
+    try{
+      FileOutputStream accountFile = context.openFileOutput(ACCOUNT_FILE_NAME,
                                                                   Context.MODE_PRIVATE);
-    accountFile.write(accountObject.toString().getBytes());
-    accountFile.close();
+      accountFile.write(accountObject.toString().getBytes());
+      accountFile.close();
+    }
+    catch(IOException e){
+      Log.e(TAG, "Ooops, IO exception when creating account. This probably won't end well.");
+    }
 
 
 
@@ -102,8 +118,13 @@ public class UDJAccount implements Parcelable{
   public static UDJAccount getUDJAccount(Context context) throws NoAccountException{
     if(theAccount == null){
       JSONObject accountJSON = getAccountJSON(context);
-      theAccount = new UDJAccount(accountJSON.getString(USER_ID_FIELD_NAME),
-                                  accountJSON.getString(TICKET_HASH_FIELD_NAME));
+      try{
+        theAccount = new UDJAccount(accountJSON.getString(USER_ID_FIELD_NAME),
+                                    accountJSON.getString(TICKET_HASH_FIELD_NAME));
+      }
+      catch(JSONException e){
+        Log.wtf(TAG, "Why the hell did the json we got back not have the User Id and Ticket hash filed in it?");
+      }
     }
     return theAccount;
   }
@@ -123,6 +144,14 @@ public class UDJAccount implements Parcelable{
     catch(FileNotFoundException e){
       throw new NoAccountException();
     }
+    catch(JSONException e){
+      Log.wtf(TAG, "Why are we getting a JSONException in getAccountJSON? We should only be wrting out valid JSON to the account file in the first place.");
+      return null;
+    }
+    catch(IOException e){
+      Log.e(TAG, "Oops, got io exception when getting account json");
+      return null;
+    }
   }
 
   public String getUserData(Context context, String key){
@@ -137,12 +166,25 @@ public class UDJAccount implements Parcelable{
     catch(FileNotFoundException e){
       return null;
     }
+    catch(IOException e){
+      Log.e(TAG, "Oops, got io exception when getting user data");
+      return null;
+    }
   }
 
   public void setUserData(Context context, String key, String value){
-    FileOutputStream fos = context.openFileOutput(DATA_FILE_PREFIX + key, Context.MODE_PRIVATE);
-    fos.write(value.getBytes());
-    fos.close();
+    try{
+      FileOutputStream fos = context.openFileOutput(DATA_FILE_PREFIX + key, Context.MODE_PRIVATE);
+      fos.write(value.getBytes());
+      fos.close();
+    }
+    catch(FileNotFoundException e){
+      Log.wtf(TAG, "When setting user data we got a file not found. This makes no sense since we're not appending and the fils should just be created. wtf.");
+    }
+    catch(IOException e){
+      Log.e(TAG, "IOException when writing user data. oops.");
+    }
+
   }
 
 }
