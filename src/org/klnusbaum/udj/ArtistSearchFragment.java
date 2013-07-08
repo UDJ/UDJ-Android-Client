@@ -20,12 +20,13 @@ package org.klnusbaum.udj;
 
 import android.support.v4.content.Loader;
 
-import android.accounts.Account;
 import android.app.SearchManager;
+
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class ArtistSearchFragment extends SearchFragment{
 
-  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account account){
+  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account UDJAccount){
     String artistQuery = getActivity().getIntent().getStringExtra(SearchManager.QUERY);
     return new ArtistSearchLoader(getActivity(), artistQuery, account);
   }

@@ -19,6 +19,8 @@
 package org.klnusbaum.udj;
 
 
+import org.klnusbaum.udj.exceptions.NoAccountException;
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.auth.AuthActivity;
 import org.klnusbaum.udj.containers.Player;
 import org.klnusbaum.udj.network.PlayerCommService;
@@ -26,8 +28,6 @@ import org.klnusbaum.udj.network.PlayerCommService.PlayerJoinError;
 
 import java.util.List;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -84,8 +84,6 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
   private PlayerListAdapter playerAdapter;
   private LocationManager lm;
   private Location lastKnown = null;
-  private Account account = null;
-  private AccountManager am;
   private SearchType searchType;
   private String nameQuery;
 
@@ -112,20 +110,13 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
 
   public void onActivityCreated(Bundle icicle){
     super.onActivityCreated(icicle);
-    am = AccountManager.get(getActivity());
-    Account[] udjAccounts = am.getAccountsByType(Constants.ACCOUNT_TYPE);
-    Log.d(TAG, "Accounts length was " + udjAccounts.length);
-    if(udjAccounts.length < 1){
+
+    try{
+      account = UDJAccount.getUDJAccount(getActivity());
+    }
+    catch(NoAccountException e){
       Intent getAccountIntent = new Intent(getActivity(), AuthActivity.class);
       startActivityForResult(getAccountIntent, ACCOUNT_CREATION_REQUEST_CODE);
-      return;
-    }
-    else if(udjAccounts.length == 1){
-      account=udjAccounts[0];
-    }
-    else{
-      account=udjAccounts[0];
-      //TODO implement if there are more than 1 account
     }
 
     searchType = (SearchType)getArguments().getSerializable(PLAYER_SEARCH_TYPE_EXTRA);
@@ -172,7 +163,7 @@ public class PlayerListFragment extends PullToRefreshListFragment implements
     switch(requestCode){
     case ACCOUNT_CREATION_REQUEST_CODE:
       if(resultCode == Activity.RESULT_OK){
-        account = (Account)data.getParcelableExtra(Constants.ACCOUNT_EXTRA);
+        account = (UDJAccount)data.getParcelableExtra(Constants.ACCOUNT_EXTRA);
       }
       else{
         getActivity().setResult(Activity.RESULT_CANCELED);

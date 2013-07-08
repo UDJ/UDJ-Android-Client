@@ -22,10 +22,6 @@ import android.support.v4.content.AsyncTaskLoader;
 
 import android.content.Context;
 import android.util.Log;
-import android.accounts.OperationCanceledException;
-import android.accounts.AuthenticatorException;
-import android.accounts.AccountManager;
-import android.accounts.Account;
 
 import java.util.List;
 import java.io.IOException;
@@ -35,6 +31,7 @@ import org.json.JSONException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.ParseException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;
 import org.klnusbaum.udj.exceptions.KickedException;
 import org.klnusbaum.udj.exceptions.PlayerInactiveException;
@@ -70,40 +67,19 @@ public class ArtistsLoader
 
   }
 
-  private Account account;
+  private UDJAccount account;
 
-  public ArtistsLoader(Context context, Account account){
+  public ArtistsLoader(Context context, UDJAccount account){
     super(context);
     this.account = account;
   }
 
   public ArtistsResult loadInBackground(){
+    String ticketHash = account.getTicketHash();
 
-    return attemptLoad(true);
-  }
-
-  private ArtistsResult attemptLoad(boolean attemptReauth){
-    AccountManager am = AccountManager.get(getContext());
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(IOException e){
-      //TODO this might actually be an auth error
-      return new ArtistsResult(null, 
-        ArtistsError.AUTHENTICATION_ERROR);
-    }
-    catch(AuthenticatorException e){
-      return new ArtistsResult(null, 
-        ArtistsError.AUTHENTICATION_ERROR);
-    }
-    catch(OperationCanceledException e){
-      return new ArtistsResult(null, 
-        ArtistsError.AUTHENTICATION_ERROR);
-    }
+    String playerId = account.getUserData(getContext(), Constants.LAST_PLAYER_ID_DATA);
 
     try{
-      String playerId = am.getUserData(account, Constants.LAST_PLAYER_ID_DATA);
       return getArtists(playerId, authToken);
     }
     catch(JSONException e){
@@ -117,15 +93,8 @@ public class ArtistsLoader
       return new ArtistsResult(null, ArtistsError.SERVER_ERROR);
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.d(TAG, "soft auth failure");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-        return attemptLoad(false);
-      }
-      else{
-        Log.d(TAG, "hard auth failure");
-        return new ArtistsResult(null, ArtistsError.AUTHENTICATION_ERROR);
-      }
+      Log.d(TAG, "hard auth failure");
+      return new ArtistsResult(null, ArtistsError.AUTHENTICATION_ERROR);
     }
     catch(PlayerInactiveException e){
       return new ArtistsResult(null, ArtistsError.PLAYER_INACTIVE_ERROR);

@@ -18,8 +18,9 @@
  */
 package org.klnusbaum.udj;
 
+import org.klnusbaum.udj.auth.UDJAccount;
+import org.klnusbaum.udj.exceptions.NoAccountException;
 
-import android.accounts.Account;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -40,14 +41,22 @@ public abstract class SearchFragment extends PullToRefreshListFragment
 
   /** Adapter used to help display the contents of the library. */
   private MusicSearchAdapter searchAdapter;
-  private Account account;
+  private UDJAccount account;
 
 
   @Override
   public void onActivityCreated(Bundle savedInstanceState){
     super.onActivityCreated(savedInstanceState);
 
-    account = Utils.basicGetUdjAccount(getActivity());
+    try{
+      account = UDJAccount.getUDJAccount();
+    }
+    catch(NoAccountException e){
+      Log.wtf(TAG, "HOLY shit! We made a SearchFragment somehow with out " +
+                   "having a UDJ account, pretty sure shits about to blow up.");
+      account = null;
+    }
+
     setEmptyText(getActivity().getString(R.string.no_library_songs));
 
     searchAdapter = new MusicSearchAdapter(getActivity(), account);
@@ -106,6 +115,6 @@ public abstract class SearchFragment extends PullToRefreshListFragment
     setListAdapter(null);
   }
 
-  public abstract Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account account);
+  public abstract Loader<MusicSearchLoader.MusicSearchResult> getLoader(UDJAccount account);
 
 }

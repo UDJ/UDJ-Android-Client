@@ -20,11 +20,11 @@ package org.klnusbaum.udj;
 
 import android.support.v4.content.Loader;
 
-import android.accounts.Account;
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class RandomSearchFragment extends SearchFragment{
 
-  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account account){
+  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(UDJAccount account){
     return new RandomSearchLoader(getActivity(), account);
   }
 

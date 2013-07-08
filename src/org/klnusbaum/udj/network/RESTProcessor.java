@@ -45,16 +45,16 @@ public class RESTProcessor{
 
   public static final String TAG = "RESTProcessor";
 
-  private static void checkVolume(Context context, AccountManager am, Account account, int volume){
-    if(Utils.getPlayerVolume(am, account) != volume){
-      am.setUserData(account, Constants.PLAYER_VOLUME_DATA, String.valueOf(volume));
+  private static void checkVolume(Context context, Account account, int volume){
+    if(Utils.getPlayerVolume(context, account) != volume){
+      account.setUserData(context, Constants.PLAYER_VOLUME_DATA, String.valueOf(volume));
       Intent playerVolumeChangedBroadcast = new Intent(Constants.BROADCAST_VOLUME_CHANGED);
       playerVolumeChangedBroadcast.putExtra(Constants.PLAYER_VOLUME_EXTRA, volume);
       context.sendBroadcast(playerVolumeChangedBroadcast);
     }
   }
 
-  private static void checkPlaybackState(Context context, AccountManager am, Account account, String playbackState){
+  private static void checkPlaybackState(Context context, Account account, String playbackState){
     int plState = Constants.PLAYING_STATE;
     if(playbackState.equals("playing")){
       plState = Constants.PLAYING_STATE;
@@ -62,8 +62,8 @@ public class RESTProcessor{
     else if(playbackState.equals("paused")){
       plState = Constants.PAUSED_STATE;
     }
-    if(Utils.getPlaybackState(am, account) != plState){
-      am.setUserData(account, Constants.PLAYBACK_STATE_DATA, String.valueOf(plState));
+    if(Utils.getPlaybackState(context, account) != plState){
+      account.setUserData(context, Constants.PLAYBACK_STATE_DATA, String.valueOf(plState));
       Intent playbackStateChangedBroadcast = new Intent(Constants.BROADCAST_PLAYBACK_CHANGED);
       playbackStateChangedBroadcast.putExtra(Constants.PLAYBACK_STATE_EXTRA, plState);
       context.sendBroadcast(playbackStateChangedBroadcast);
@@ -72,13 +72,12 @@ public class RESTProcessor{
 
   public static List<ActivePlaylistEntry> processActivePlaylist(
     JSONObject activePlaylist,
-    AccountManager am,
     Account account,
     Context context)
     throws JSONException
   {
-    checkPlaybackState(context, am, account, activePlaylist.getString("state"));
-    checkVolume(context, am, account, activePlaylist.getInt("volume"));
+    checkPlaybackState(context, activePlaylist.getString("state"));
+    checkVolume(context, activePlaylist.getInt("volume"));
     ActivePlaylistEntry currentSong = 
       ActivePlaylistEntry.valueOf(activePlaylist.getJSONObject("current_song"));
     currentSong.setCurrentSong(true);

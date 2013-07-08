@@ -16,29 +16,25 @@
  * You should have received a copy of the GNU General Public License
  * along with UDJ.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.klnusbaum.udj.network;
+package org.klnusbaum.udj.exceptions;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
+public class NoAccountException extends Exception{
 
-public class SyncService extends Service{
+  public static final long serialVersionUID = 1;
 
-  private static final Object sSyncAdapterLock = new Object();
-
-  private static SyncAdapter sSyncAdapter = null;
-
-  @Override
-  public void onCreate() {
-    synchronized (sSyncAdapterLock) {
-      if (sSyncAdapter == null) {
-        sSyncAdapter = new SyncAdapter(getApplicationContext(), true);
-      }
-    }
+  public NoAccountException(){
+    super();
   }
 
-  @Override
-  public IBinder onBind(Intent intent) {
-      return sSyncAdapter.getSyncAdapterBinder();
+  public NoAccountException(String message){
+    super(message);
+  }
+
+  public NoAccountException(String message, Throwable cause){
+    super(message, cause);
+  }
+
+  public NoAccountException(Throwable cause){
+    super(cause);
   }
 }

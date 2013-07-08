@@ -20,11 +20,11 @@ package org.klnusbaum.udj;
 
 import android.support.v4.content.Loader;
 
-import android.accounts.Account;
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class RecentlyPlayedFragment extends SearchFragment{
 
-  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account account){
+  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(UDJAccount account){
     return new RecentlyPlayedLoader(getActivity(), account);
   }
 

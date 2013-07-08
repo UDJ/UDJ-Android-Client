@@ -20,10 +20,6 @@ package org.klnusbaum.udj.network;
 
 
 import android.content.Context;
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.OperationCanceledException;
-import android.accounts.AuthenticatorException;
 import android.os.RemoteException;
 import android.content.OperationApplicationException;
 import android.util.Log;
@@ -70,10 +66,9 @@ public class PlaylistSyncService extends IntentService{
 
   @Override
   public void onHandleIntent(Intent intent){
-    final Account account =
-      (Account)intent.getParcelableExtra(Constants.ACCOUNT_EXTRA);
-    String playerId = AccountManager.get(this).getUserData(
-      account, Constants.LAST_PLAYER_ID_DATA);
+    final UDJAccount account =
+      (UDJAccount)intent.getParcelableExtra(Constants.ACCOUNT_EXTRA);
+    final String playerId = account.getUserData(context, Constants.LAST_PLAYER_ID_DATA);
     //TODO handle error if playerId is bad
     if(intent.getAction().equals(Intent.ACTION_INSERT)){
       if(intent.getData().equals(Constants.PLAYLIST_URI)){
@@ -87,11 +82,7 @@ public class PlaylistSyncService extends IntentService{
         int voteWeight = intent.getIntExtra(Constants.VOTE_WEIGHT_EXTRA,0); 
         voteOnSong(account, playerId, libId, voteWeight, true);
       }
-      //updateActivePlaylist(account, playerId, true); 
     }
-    /*else if(intent.getAction().equals(Intent.ACTION_VIEW)){
-      updateActivePlaylist(account, playerId, true); 
-    }*/
     else if(intent.getAction().equals(Intent.ACTION_DELETE)){
       Log.d(TAG, "Handling delete");
       if(intent.getData().equals(Constants.PLAYLIST_URI)){
@@ -100,119 +91,30 @@ public class PlaylistSyncService extends IntentService{
         String libId = intent.getStringExtra(Constants.LIB_ID_EXTRA);
         removeSongFromPlaylist(account, playerId, libId, true, intent);
       }
-      //updateActivePlaylist(account, playerId, true);
     }
     else if(intent.getAction().equals(Constants.ACTION_SET_CURRENT_SONG)){
       Log.d(TAG, "Handling setting current song");
       String libId = intent.getStringExtra(Constants.LIB_ID_EXTRA);
       setCurrentSong(account, playerId, libId, true, intent);
-      //updateActivePlaylist(account, playerId, true);
     }
     else if(intent.getAction().equals(Constants.ACTION_SET_PLAYBACK)){
       setPlaybackState(intent, account, playerId, true);
-      //updateActivePlaylist(account, playerId, true);
     }
     else if(intent.getAction().equals(Constants.ACTION_SET_VOLUME)){
       setPlayerVolume(intent, account, playerId, true);
-      //updateActivePlaylist(account, playerId, true);
     }
   }
-
-/*  private void updateActivePlaylist(
-    Account account, String playerId, boolean attemptReauth)
-  {
-    Log.d(TAG, "updating active playlist");
-    AccountManager am = AccountManager.get(this);
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(IOException e){
-      Log.e(TAG, "IO exception when retreiving playist");
-    }
-    catch(OperationCanceledException e){
-      Log.e(TAG, "Op Canceled exception when retreiving playist");
-    }
-    catch(AuthenticatorException e){
-      Log.e(TAG, "Authentication exception when retreiving playist");
-    }
-
-
-    try{
-      JSONObject activePlaylist =
-        ServerConnection.getActivePlaylist(playerId, authToken);
-      RESTProcessor.setActivePlaylist(activePlaylist, am, account, this);
-    }
-    catch(JSONException e){
-      Log.e(TAG, "JSON exception when retreiving playist");
-      Log.e(TAG, e.getMessage());
-    }
-    catch(ParseException e){
-      Log.e(TAG, "Parse exception when retreiving playist");
-    }
-    catch(IOException e){
-      Log.e(TAG, "IO exception when retreiving playist");
-    }
-    catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.e(TAG, "Soft Authentication exception when retreiving playist");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken); 
-        updateActivePlaylist(account, playerId, false);
-      }
-      else{
-        Log.e(TAG, "Hard Authentication exception when retreiving playist");
-      } 
-    }
-    catch(RemoteException e){
-      Log.e(TAG, "Remote exception when retreiving playist");
-    }
-    catch(OperationApplicationException e){
-      Log.e(TAG, "Operation Application exception when retreiving playist");
-    }
-    catch(PlayerInactiveException e){
-      Log.e(TAG, "Player Inactive exception when retreiving playlist");
-      Utils.handleInactivePlayer(this, account);
-    }
-    catch (NoLongerInPlayerException e) {
-      Utils.handleNoLongerInPlayer(this, account);
-    }
-    catch(KickedException e){
-      Utils.handleKickedFromPlayer(this, account);
-    }
-    //TODO This point of the app seems very dangerous as there are so many
-    // exceptions that could occuer. Need to pay special attention to this.
-
-  }
-  */
 
   private void setCurrentSong(
     Account account,
     String playerId,
     String libId,
-    boolean attemptReauth,
     Intent originalIntent)
   {
-    String authToken = "";
-    AccountManager am = AccountManager.get(this);
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(AuthenticatorException e){
-      alertSetSongException(account, originalIntent);
-      Log.e(TAG, "Authentication exception when setting song");
-    }
-    catch(OperationCanceledException e){
-      alertSetSongException(account, originalIntent);
-      Log.e(TAG, "Op Canceled exception when setting song");
-    }
-    catch(IOException e){
-      alertSetSongException(account, originalIntent);
-      Log.e(TAG, "IO exception when geting authtoken for setting song");
-      Log.e(TAG, e.getMessage());
-    }
+    String ticketHash = account.getTicketHash();
 
     try{
-      ServerConnection.setCurrentSong(playerId, libId, authToken);
+      ServerConnection.setCurrentSong(playerId, libId, ticketHash);
       Intent setCurrentComplete = new Intent(Constants.BROADCAST_SET_CURRENT_COMPLETE);
       this.sendBroadcast(setCurrentComplete);
     }
@@ -222,15 +124,8 @@ public class PlaylistSyncService extends IntentService{
       Log.e(TAG, e.getMessage());
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken); 
-        addSongToPlaylist(account, playerId, libId, false, originalIntent);
-        Log.e(TAG, "Soft Authentication exception when setting song");
-      }
-      else{
-        alertSetSongException(account, originalIntent);
-        Log.e(TAG, "Hard Authentication exception when setting song");
-      }
+      alertSetSongException(account, originalIntent);
+      Log.e(TAG, "Hard Authentication exception when setting song");
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Event over exceptoin when setting song");
@@ -252,28 +147,11 @@ public class PlaylistSyncService extends IntentService{
     boolean attemptReauth,
     Intent originalIntent)
   {
-    String authToken = "";
-    AccountManager am = AccountManager.get(this);
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(AuthenticatorException e){
-      alertAddSongException(account, originalIntent);
-      Log.e(TAG, "Authentication exception when adding to playist");
-    }
-    catch(OperationCanceledException e){
-      alertAddSongException(account, originalIntent);
-      Log.e(TAG, "Op Canceled exception when adding to playist");
-    }
-    catch(IOException e){
-      alertAddSongException(account, originalIntent);
-      Log.e(TAG, "IO exception when geting authtoken for adding to playist");
-      Log.e(TAG, e.getMessage());
-    }
+    String ticketHash = account.getTicketHash();
 
     try{
       ServerConnection.addSongToActivePlaylist(
-          playerId, libId, authToken);
+          playerId, libId, ticketHash);
     }
     catch(JSONException e){
       alertAddSongException(account, originalIntent);
@@ -289,15 +167,8 @@ public class PlaylistSyncService extends IntentService{
       Log.e(TAG, e.getMessage());
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken); 
-        addSongToPlaylist(account, playerId, libId, false, originalIntent);
-        Log.e(TAG, "Soft Authentication exception when adding to playist");
-      }
-      else{
-        alertAddSongException(account, originalIntent);
-        Log.e(TAG, "Hard Authentication exception when adding to playist");
-      }
+      alertAddSongException(account, originalIntent);
+      Log.e(TAG, "Hard Authentication exception when adding to playist");
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Event over exceptoin when retreiving playlist");
@@ -313,31 +184,13 @@ public class PlaylistSyncService extends IntentService{
 
   }
 
-  private void removeSongFromPlaylist(
-      Account account, String playerId, String libId, boolean attemptReauth, Intent originalIntent)
+  private void removeSongFromPlaylist(Account account, String playerId, String libId, Intent originalIntent)
   {
-    String authToken = "";
-    AccountManager am = AccountManager.get(this);
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(AuthenticatorException e){
-      alertRemoveSongException(account, originalIntent);
-      Log.e(TAG, "Authentication exception when removing from playist");
-    }
-    catch(OperationCanceledException e){
-      alertRemoveSongException(account, originalIntent);
-      Log.e(TAG, "Op Canceled exception when removing from playist");
-    }
-    catch(IOException e){
-      alertRemoveSongException(account, originalIntent);
-      Log.e(TAG, "IO exception when removing from playist/getting authtoken");
-      Log.e(TAG, e.getMessage());
-    }
+    String ticketHash = account.getTicketHash();
 
     try{
       Log.d(TAG, "Actually removing song");
-      ServerConnection.removeSongFromActivePlaylist(playerId, libId, authToken);
+      ServerConnection.removeSongFromActivePlaylist(playerId, libId, ticketHash);
       Intent removeSongComplete = new Intent(Constants.BROADCAST_REMOVE_SONG_COMPLETE);
       this.sendBroadcast(removeSongComplete);
     }
@@ -351,20 +204,14 @@ public class PlaylistSyncService extends IntentService{
       Log.e(TAG, e.getMessage());
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken); 
-        removeSongFromPlaylist(account, playerId, libId, false, originalIntent);
-        Log.e(TAG, "Soft Authentication exception when removing from playist");
-      }
-      else{
-        alertRemoveSongException(account, originalIntent);
-        Log.e(TAG, "Hard Authentication exception when removing from playist");
-      }
+      alertRemoveSongException(account, originalIntent);
+      Log.e(TAG, "Hard Authentication exception when removing from playist");
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Event over exceptoin when removing from playlist");
       Utils.handleInactivePlayer(this, account);
-    } catch (NoLongerInPlayerException e) {
+    }
+    catch(NoLongerInPlayerException e){
       Utils.handleNoLongerInPlayer(this, account);
     }
     catch(KickedException e){
@@ -372,21 +219,8 @@ public class PlaylistSyncService extends IntentService{
     }
   }
 
-  private void voteOnSong(Account account, String playerId, String libId, int voteWeight, boolean attemptReauth){
-    AccountManager am = AccountManager.get(this);
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(IOException e){
-      Log.e(TAG, "IO exception when voting on playist");
-    }
-    catch(AuthenticatorException e){
-      Log.e(TAG, "Authentication exception when voting playist");
-    }
-    catch(OperationCanceledException e){
-      Log.e(TAG, "Op Canceled exception when voting playist");
-    }
+  private void voteOnSong(Account account, String playerId, String libId, int voteWeight){
+    String ticketHash = account.getTicketHash();
 
     try{
       ServerConnection.voteOnSong(playerId, libId, voteWeight, authToken);
@@ -394,25 +228,19 @@ public class PlaylistSyncService extends IntentService{
       this.sendBroadcast(voteCompleteBroadcast);
     }
     catch(ParseException e){
-      Log.e(TAG, "Parse exception when retreiving playist");
+      Log.e(TAG, "Parse exception when voting on song");
     }
     catch(IOException e){
-      Log.e(TAG, "IO exception when retreiving playist");
+      Log.e(TAG, "IO exception when voting on song");
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.e(TAG, "Soft Authentication exception when retreiving playist");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken); 
-        voteOnSong(account, playerId, libId, voteWeight, false);
-      }
-      else{
-        Log.e(TAG, "Hard Authentication exception when retreiving playist");
-      }
+      Log.e(TAG, "Hard Authentication exception when voting on song");
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Event over exception when retreiving playlist");
       Utils.handleInactivePlayer(this, account);
-    } catch (NoLongerInPlayerException e) {
+    }
+    catch(NoLongerInPlayerException e){
       Utils.handleNoLongerInPlayer(this, account);
     }
     catch(KickedException e){
@@ -420,36 +248,15 @@ public class PlaylistSyncService extends IntentService{
     }
   }
 
-  private void setPlayerVolume(
-    Intent intent, Account account, String playerId, boolean attemptReauth)
-  {
-    AccountManager am = AccountManager.get(this);
+  private void setPlayerVolume(Intent intent, UDJAccount account, String playerId){
     int desiredVolume = intent.getIntExtra(Constants.PLAYER_VOLUME_EXTRA, 0);
     Log.d(TAG, "proceeding to set volume of player to: " + String.valueOf(desiredVolume) + 
         " on server");
 
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);  
-    }
-    catch(OperationCanceledException e){
-      //TODO do something here?
-      Log.e(TAG, "Operation canceled exception in set playback" );
-      return;
-    }
-    catch(AuthenticatorException e){
-      //TODO do something here?
-      Log.e(TAG, "Authenticator exception in set playback" );
-      return;
-    }
-    catch(IOException e){
-      //TODO do something here?
-      Log.e(TAG, "IO exception in set playback" );
-      return;
-    }
+    String ticketHash = account.getTicketHash();
 
     try{
-      ServerConnection.setPlayerVolume(playerId, desiredVolume, authToken);
+      ServerConnection.setPlayerVolume(playerId, desiredVolume, ticketHash);
     }
     catch(IOException e){
       Log.e(TAG, "IO exception in set volume" );
@@ -457,15 +264,9 @@ public class PlaylistSyncService extends IntentService{
       return;
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.d(TAG, "Soft Authentication exception when setting volume");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-        setPlayerVolume(intent, account, playerId, false);
-      }
-      else{
-        Log.e(TAG, "Hard Authentication exception when setting volume");
-        //TODO do something here?
-      }
+      Log.e(TAG, "Hard Authentication exception when setting volume");
+      alertSetVolumeException(account, intent);
+      return;
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Player inactive exception in set volume" );
@@ -482,29 +283,9 @@ public class PlaylistSyncService extends IntentService{
   }
 
 
-  private void setPlaybackState(
-    Intent intent, Account account, String playerId, boolean attemptReauth)
+  private void setPlaybackState(Intent intent, Account account, String playerId)
   {
-    AccountManager am = AccountManager.get(this);
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);  
-    }
-    catch(OperationCanceledException e){
-      //TODO do something here?
-      Log.e(TAG, "Operation canceled exception in set playback" );
-      return;
-    }
-    catch(AuthenticatorException e){
-      //TODO do something here?
-      Log.e(TAG, "Authenticator exception in set playback" );
-      return;
-    }
-    catch(IOException e){
-      //TODO do something here?
-      Log.e(TAG, "IO exception in set playback" );
-      return;
-    }
+    String authToken = account.getTicketHash();
 
     int desiredPlaybackState = intent.getIntExtra(Constants.PLAYBACK_STATE_EXTRA, 0);
     try{
@@ -516,15 +297,8 @@ public class PlaylistSyncService extends IntentService{
       return;
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.d(TAG, "Soft Authentication exception when setting playback state");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-        setPlaybackState(intent, account, playerId, false);
-      }
-      else{
-        Log.e(TAG, "Hard Authentication exception when setting playback state");
-        //TODO do something here?
-      }
+      alertSetPlaybackException(account, intent);
+      Log.e(TAG, "Hard Authentication exception when setting playback state");
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Player inactive exception in set playback" );

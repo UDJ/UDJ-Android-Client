@@ -20,7 +20,6 @@ package org.klnusbaum.udj;
 
 
 import android.content.Context;
-import android.accounts.Account;
 
 import java.util.List;
 import java.io.IOException;
@@ -30,6 +29,7 @@ import org.json.JSONException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.ParseException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.network.ServerConnection;
 import org.klnusbaum.udj.containers.LibraryEntry;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;
@@ -39,7 +39,7 @@ import org.klnusbaum.udj.exceptions.KickedException;
 public class RandomSearchLoader extends MusicSearchLoader{
 
 
-  public RandomSearchLoader(Context context, Account account){
+  public RandomSearchLoader(Context context, UDJAccount account){
     super(context, account);
   }
 

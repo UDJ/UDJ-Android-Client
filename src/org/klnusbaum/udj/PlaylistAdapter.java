@@ -18,12 +18,11 @@
  */
 package org.klnusbaum.udj;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.containers.ActivePlaylistEntry;
 import org.klnusbaum.udj.containers.User;
 import org.klnusbaum.udj.network.PlaylistSyncService;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.view.LayoutInflater;
 import android.content.Context;
 import android.content.Intent;
@@ -45,7 +44,7 @@ public class PlaylistAdapter extends StringIdableAdapter<ActivePlaylistEntry>{
   private String userId;
   private Context context;
   private final PlaylistFragment plFrag;
-  private Account account;
+  private UDJAccount account;
   private User me;
 
   public PlaylistAdapter(
@@ -53,7 +52,7 @@ public class PlaylistAdapter extends StringIdableAdapter<ActivePlaylistEntry>{
     List<ActivePlaylistEntry> playlist,
     PlaylistFragment plFrag,
     String userId,
-    Account account)
+    UDJAccount account)
   {
     super(playlist);
     this.userId = userId;

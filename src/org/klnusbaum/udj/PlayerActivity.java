@@ -28,8 +28,6 @@ import android.widget.SeekBar;
 import android.app.Dialog;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.accounts.AccountManager;
-import android.accounts.Account;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.view.MenuInflater;
@@ -44,6 +42,7 @@ import android.view.ViewGroup;
 import android.view.LayoutInflater;
 
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.Constants;
 import org.klnusbaum.udj.network.PlaylistSyncService;
 
@@ -102,16 +101,15 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
   }
 
   public void onBackPressed(){
-      AccountManager am = AccountManager.get(this);
-      Utils.leavePlayer(am, account);
+      Utils.leavePlayer(context, account);
       finish();
   }
 
 
 
   public static class PlayerPagerAdapter extends FragmentPagerAdapter{
-    private Account account;
-    public PlayerPagerAdapter(FragmentManager fm, Account account){
+    private UDJAccount account;
+    public PlayerPagerAdapter(FragmentManager fm, UDJAccount account){
       super(fm);
       this.account = account;
     }
@@ -157,9 +155,8 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
   }
 
   public boolean onCreateOptionsMenu(Menu menu){
-    AccountManager am = AccountManager.get(this);
-    if(Utils.isCurrentPlayerOwner(am, account)){
-      int playbackState = Utils.getPlaybackState(am, account);
+    if(Utils.isCurrentPlayerOwner(context, account)){
+      int playbackState = Utils.getPlaybackState(context, account);
       if(playbackState == Constants.PLAYING_STATE){
         menu.add(getString(R.string.pause))
           .setIcon(R.drawable.ab_pause)
@@ -215,8 +212,7 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
   }
 
   private void changePlaybackMenuOption(int newPlaybackState){
-    AccountManager am = AccountManager.get(this);
-    am.setUserData(account, Constants.PLAYBACK_STATE_DATA, String.valueOf(newPlaybackState));
+    account.setUserData(context, Constants.PLAYBACK_STATE_DATA, String.valueOf(newPlaybackState));
     invalidateOptionsMenu();
   }
 
@@ -237,7 +233,7 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
     PlayerActivity.setVolume(this, account, newVolume);
   }
 
-  private static void setVolume(Context context, Account account, int newVolume){
+  private static void setVolume(Context context, UDJAccount account, int newVolume){
     Intent setPlaybackIntent = new Intent(
       Constants.ACTION_SET_VOLUME,
       Constants.PLAYER_URI,
@@ -255,8 +251,8 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
     private TextView volumeDisplay;
     private SeekBar volumeBar;
 
-    private Account getAccount(){
-      return (Account)getArguments().getParcelable(Constants.ACCOUNT_EXTRA);
+    private UDJAccount getAccount(){
+      return (UDJAccount)getArguments().getParcelable(Constants.ACCOUNT_EXTRA);
     }
 
     public void onClick(DialogInterface dialog, int whichButton){
@@ -279,13 +275,12 @@ public class PlayerActivity extends PlayerExceptionListenerActivity {
       View volumeEditor = inflater.inflate(R.layout.set_volume, null, false);
       toReturn.setView(volumeEditor);
 
-      AccountManager am = AccountManager.get(getActivity());
       volumeBar = (SeekBar)volumeEditor.findViewById(R.id.volume_selector);
       volumeDisplay = (TextView)volumeEditor.findViewById(R.id.volume_display);
       volumeBar.setMax(10);
-      volumeBar.setProgress(Utils.getPlayerVolume(am, getAccount()));
+      volumeBar.setProgress(Utils.getPlayerVolume(context, getAccount()));
       volumeBar.setPadding(volumeBar.getThumbOffset()+2, 2, volumeBar.getThumbOffset()+2, 2);
-      volumeDisplay.setText(String.valueOf(Utils.getPlayerVolume(am, getAccount())));
+      volumeDisplay.setText(String.valueOf(Utils.getPlayerVolume(context, getAccount())));
       volumeBar.setOnSeekBarChangeListener(this);
 
       return toReturn;

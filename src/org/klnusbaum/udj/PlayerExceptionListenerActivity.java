@@ -23,8 +23,6 @@ import android.os.Bundle;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Context;
-import android.accounts.AccountManager;
-import android.accounts.Account;
 import android.content.DialogInterface;
 import android.app.Dialog;
 import android.app.AlertDialog;
@@ -35,6 +33,8 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.DialogFragment;
 
 import org.klnusbaum.udj.network.PlayerCommService;
+import org.klnusbaum.udj.auth.UDJAccount;
+import org.klnusbaum.udj.exceptions.NoAccountException;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 
@@ -45,7 +45,7 @@ public abstract class PlayerExceptionListenerActivity extends SherlockFragmentAc
   private static final String NO_LONGER_IN_PLAYER_DIALOG = "no_longer_in_player_dialog";
   private static final String KICKED_FROM_PLAYER_DIALOG = "kicked_from_player_dialog";
   private static final String TAG = "PlayerInactivityListenerActivity";
-  protected Account account;
+  protected UDJAccount account;
 
   private BroadcastReceiver playerInactivityReceiver = new BroadcastReceiver(){
     public void onReceive(Context context, Intent intent){
@@ -73,7 +73,14 @@ public abstract class PlayerExceptionListenerActivity extends SherlockFragmentAc
 
   protected void onCreate(Bundle savedInstanceState){
     super.onCreate(savedInstanceState);
-    account = Utils.basicGetUdjAccount(this);
+    try{
+      account = UDJAccount.getUDJAccount(this);
+    }
+    catch(NoAccountException e){
+      Log.wtf(TAG, "Holy shit, why are we in a PlayerExceptionListenerActivity" +
+                   " when there's no account available. Shit is probably about to explode");
+      account = null;
+    }
   }
 
   @Override
@@ -166,8 +173,8 @@ public abstract class PlayerExceptionListenerActivity extends SherlockFragmentAc
 
     public static final String DIALOG_TITLE = "dialog_title";
     public static final String DIALOG_MESSAGE = "dialog_message";
-    private Account getAccount(){
-      return (Account)getArguments().getParcelable(Constants.ACCOUNT_EXTRA);
+    private UDJAccount getAccount(){
+      return (UDJAccount)getArguments().getParcelable(Constants.ACCOUNT_EXTRA);
     }
 
     @Override
@@ -190,8 +197,7 @@ public abstract class PlayerExceptionListenerActivity extends SherlockFragmentAc
     }
     
     private void finalizePlayer(){
-      AccountManager am = AccountManager.get(getActivity());
-      Utils.leavePlayer(am, getAccount());
+      Utils.leavePlayer(context, getAccount());
       getActivity().setResult(Activity.RESULT_OK);
       getActivity().finish();
     }

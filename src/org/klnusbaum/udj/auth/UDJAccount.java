@@ -7,7 +7,10 @@ import java.util.Scanner;
 
 import android.content.Context;
 
+import org.klnusbaum.udj.exceptions.NoAccountException;
+
 public class UDJAccount{
+
 
   private String userId;
   private String ticketHash;
@@ -37,6 +40,9 @@ public class UDJAccount{
                                                                   Context.MODE_PRIVATE);
     accountFile.write(accountObject.toString().getBytes());
     accountFile.close();
+
+
+
     theAccount = new UDJAccount(userId, ticketHash);
   }
 
@@ -66,6 +72,28 @@ public class UDJAccount{
       sc.close();
       accountFile.close();
     }
+  }
+
+  public String getUserData(Context context, String key){
+    try{
+      InputStream accountFile = new BufferedInputStream(context.openFileInput("data_" + key));
+      Scanner sc = new Scanner(accountFile);
+      String value = sc.next();
+      return value;
+    }
+    catch(FileNotFoundException e){
+      return null;
+    }
+    finally{
+      sc.close();
+      accountFile.close();
+    }
+  }
+
+  public void setUserData(Context context, String key, String value){
+    FileOutputStream fos = context.openFileOutput("data_" + key, Context.MODE_PRIVATE);
+    fos.write(value.getBytes());
+    fos.close();
   }
 
 }

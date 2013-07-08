@@ -20,10 +20,6 @@ package org.klnusbaum.udj.network;
 
 
 import android.content.ContentResolver;
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.OperationCanceledException;
-import android.accounts.AuthenticatorException;
 import android.util.Log;
 import android.app.IntentService;
 import android.content.Intent;
@@ -69,11 +65,10 @@ public class PlayerCommService extends IntentService{
   @Override
   public void onHandleIntent(Intent intent){
     Log.d(TAG, "In Player Comm Service");
-    AccountManager am = AccountManager.get(this);
-    final Account account = 
-      (Account)intent.getParcelableExtra(Constants.ACCOUNT_EXTRA);
+    final UDJAccount account = 
+      (UDJAccount)intent.getParcelableExtra(Constants.ACCOUNT_EXTRA);
     if(intent.getAction().equals(Intent.ACTION_INSERT)){
-      joinPlayer(intent, am, account, true);
+      joinPlayer(intent, account);
     }
     else{
       Log.d(TAG, "Unrecognized action of, it was " + 
@@ -82,19 +77,17 @@ public class PlayerCommService extends IntentService{
   }
 
 
-  private void joinPlayer(
-      Intent intent, AccountManager am, Account account, boolean attemptReauth)
-  {
+  private void joinPlayer(Intent intent, UDJAccount account){
     if(!Utils.isNetworkAvailable(this)){
-      doLoginFail(am, account, PlayerJoinError.NO_NETWORK_ERROR);
+      doLoginFail(account, PlayerJoinError.NO_NETWORK_ERROR);
       return;
     }
 
-    String userId = am.getUserData(account, Constants.USER_ID_DATA);
+    String userId = account.getUserData(context, Constants.USER_ID_DATA);
     String playerId = intent.getStringExtra(Constants.PLAYER_ID_EXTRA);
     String ownerId = intent.getStringExtra(Constants.PLAYER_OWNER_ID_EXTRA);
     if(userId.equals(ownerId)){
-      setLoggedInToPlayer(intent, am, account, playerId);
+      setLoggedInToPlayer(intent, account, playerId);
       return;
     }
 
@@ -102,86 +95,70 @@ public class PlayerCommService extends IntentService{
     String password = "";
     boolean hasPassword = false;
     //TODO hanle error if account isn't provided
-    try{
-      //TODO handle if player id isn't provided
-      authToken = am.blockingGetAuthToken(account, "", true);
-      if(intent.hasExtra(Constants.PLAYER_PASSWORD_EXTRA)){
-        Log.d(TAG, "password given for player");
-        hasPassword = true;
-        password = intent.getStringExtra(Constants.PLAYER_PASSWORD_EXTRA);
-      }
-      else{
-        Log.d(TAG, "No password given for player");
-      }
+    //TODO handle if player id isn't provided
+    ticket_hash = account.getTicketHash();
+    if(intent.hasExtra(Constants.PLAYER_PASSWORD_EXTRA)){
+      Log.d(TAG, "password given for player");
+      hasPassword = true;
+      password = intent.getStringExtra(Constants.PLAYER_PASSWORD_EXTRA);
     }
-    catch(OperationCanceledException e){
-      Log.e(TAG, "Operation canceled exception" );
-      doLoginFail(am, account, PlayerJoinError.AUTHENTICATION_ERROR);
-      return;
-    }
-    catch(AuthenticatorException e){
-      Log.e(TAG, "Authenticator exception" );
-      doLoginFail(am, account, PlayerJoinError.AUTHENTICATION_ERROR);
-      return;
-    }
-    catch(IOException e){
-      Log.e(TAG, "IO exception" );
-      doLoginFail(am, account, PlayerJoinError.AUTHENTICATION_ERROR);
-      return;
+    else{
+      Log.d(TAG, "No password given for player");
     }
 
     try{
       if(!hasPassword){
-        ServerConnection.joinPlayer(playerId, authToken);
+        ServerConnection.joinPlayer(playerId, ticketHash);
       }
       else{
-        ServerConnection.joinPlayer(playerId, password, authToken);
+        ServerConnection.joinPlayer(playerId, password, ticketHash);
       }
-      setLoggedInToPlayer(intent, am, account, playerId);
+      setLoggedInToPlayer(intent, account, playerId);
     }
     catch(IOException e){
       Log.e(TAG, "IO exception when joining player");
       Log.e(TAG, e.getMessage());
-      doLoginFail(am, account, PlayerJoinError.SERVER_ERROR);
+      doLoginFail(account, PlayerJoinError.SERVER_ERROR);
     }
     catch(JSONException e){
       Log.e(TAG, 
           "JSON exception when joining player");
       Log.e(TAG, e.getMessage());
-      doLoginFail(am, account, PlayerJoinError.SERVER_ERROR);
+      doLoginFail(account, PlayerJoinError.SERVER_ERROR);
     }
     catch(AuthenticationException e){
-      handleLoginAuthException(intent, am, account, authToken, attemptReauth);
+      Log.e(TAG, "Bad password when joining player");
+      doLoginFail(account, PlayerJoinError.AUTHENTICATION_ERROR);
     }
     catch(PlayerInactiveException e){
       Log.e(TAG, "Player inactive Exception when joining player");
-      doLoginFail(am, account, PlayerJoinError.PLAYER_INACTIVE_ERROR);
+      doLoginFail(account, PlayerJoinError.PLAYER_INACTIVE_ERROR);
     } catch (ParseException e) {
       e.printStackTrace();
-      doLoginFail(am, account, PlayerJoinError.SERVER_ERROR);
+      doLoginFail(account, PlayerJoinError.SERVER_ERROR);
     } catch (PlayerPasswordException e) {
       Log.e(TAG, "Player Password Exception");
       e.printStackTrace();
-      doLoginFail(am, account, PlayerJoinError.PLAYER_PASSWORD_ERROR);
+      doLoginFail(account, PlayerJoinError.PLAYER_PASSWORD_ERROR);
     }
     catch(PlayerFullException e){
       Log.e(TAG, "Player Password Exception");
       e.printStackTrace();
-      doLoginFail(am, account, PlayerJoinError.PLAYER_FULL_ERROR);
+      doLoginFail(account, PlayerJoinError.PLAYER_FULL_ERROR);
     }
     catch(BannedException e){
       Log.e(TAG, "Player Password Exception");
       e.printStackTrace();
-      doLoginFail(am, account, PlayerJoinError.BANNED_ERROR);
+      doLoginFail(account, PlayerJoinError.BANNED_ERROR);
     }
   }
 
-  private void setLoggedInToPlayer(Intent joinPlayerIntent, AccountManager am, Account account, String playerId){
-    setPlayerData(joinPlayerIntent, am, account);
-    am.setUserData(
-        account, Constants.LAST_PLAYER_ID_DATA, playerId);
-    am.setUserData(
-        account, 
+  private void setLoggedInToPlayer(Intent joinPlayerIntent, UDJAccount account, String playerId){
+    setPlayerData(joinPlayerIntent, account);
+    account.setUserData(
+        context, Constants.LAST_PLAYER_ID_DATA, playerId);
+    account.setUserData(
+        context, 
         Constants.PLAYER_STATE_DATA, 
         String.valueOf(Constants.IN_PLAYER));
     Log.d(TAG, "Sending joined player broadcast");
@@ -189,34 +166,16 @@ public class PlayerCommService extends IntentService{
     sendBroadcast(playerJoinedBroadcast);
   }
 
-  private void handleLoginAuthException(
-    Intent intent, AccountManager am, Account account, 
-    String authToken, boolean attemptReauth)
-  {
-    if(attemptReauth){
-      Log.d(TAG,
-        "Soft Authentication exception when joining player");
-      am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-      joinPlayer(intent, am, account, false);
-    }
-    else{
-      Log.e(TAG,
-        "Hard Authentication exception when joining player");
-      doLoginFail(am, account, PlayerJoinError.AUTHENTICATION_ERROR);
-    }
-  }
-
   private void doLoginFail(
-    AccountManager am,
-    Account account,
+    UDJAccount account,
     PlayerJoinError error)
   {
-    am.setUserData(
-      account,
+    account.setUserData(
+      context,
       Constants.PLAYER_STATE_DATA,
       String.valueOf(Constants.PLAYER_JOIN_FAILED));
-    am.setUserData(
-      account,
+    account.setUserData(
+      context,
       Constants.PLAYER_JOIN_ERROR,
       error.toString());
     Intent playerJoinFailedIntent =
@@ -225,26 +184,26 @@ public class PlayerCommService extends IntentService{
     sendBroadcast(playerJoinFailedIntent);
   }
 
-  private void setPlayerData(Intent intent, AccountManager am, Account account){
-    am.setUserData(
-      account,
-      Constants.PLAYER_NAME_DATA,
-      intent.getStringExtra(Constants.PLAYER_NAME_EXTRA));
-    am.setUserData(
-      account,
-      Constants.PLAYER_HOSTNAME_DATA,
+  private void setPlayerData(Intent intent, UDJAccount account){
+    account.setUserData(
+      context,
+      Constants.PLAYER_NaccountE_DATA,
+      intent.getStringExtra(Constants.PLAYER_NaccountE_EXTRA));
+    account.setUserData(
+      context,
+      Constants.PLAYER_HOSTNaccountE_DATA,
       intent.getStringExtra(Constants.PLAYER_OWNER_EXTRA));
-    am.setUserData(
-      account,
+    account.setUserData(
+      context,
       Constants.PLAYER_HOST_ID_DATA,
       intent.getStringExtra(Constants.PLAYER_OWNER_ID_EXTRA));
-    am.setUserData(
-      account,
+    account.setUserData(
+      context,
       Constants.PLAYER_LAT_DATA,
       String.valueOf(intent.getDoubleExtra(Constants.PLAYER_LAT_EXTRA, -100.0))
     );
-    am.setUserData(
-      account,
+    account.setUserData(
+      context,
       Constants.PLAYER_LONG_DATA,
       String.valueOf(intent.getDoubleExtra(Constants.PLAYER_LONG_EXTRA, -100.0))
     );

@@ -20,7 +20,6 @@ package org.klnusbaum.udj;
 
 
 import android.content.Context;
-import android.accounts.Account;
 
 import java.util.List;
 import java.io.IOException;
@@ -30,6 +29,7 @@ import org.json.JSONException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.ParseException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.network.ServerConnection;
 import org.klnusbaum.udj.containers.LibraryEntry;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;
@@ -41,7 +41,7 @@ public class ArtistSearchLoader extends MusicSearchLoader{
   private String artistQuery;
 
   public ArtistSearchLoader(
-    Context context, String artistQuery, Account account)
+    Context context, String artistQuery, UDJAccount account)
   {
     super(context, account);
     this.artistQuery = artistQuery;

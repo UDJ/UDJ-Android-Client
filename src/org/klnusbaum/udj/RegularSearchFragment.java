@@ -21,9 +21,10 @@ package org.klnusbaum.udj;
 import android.support.v4.content.Loader;
 
 import android.os.Bundle;
-import android.accounts.Account;
 import android.app.SearchManager;
 import android.provider.SearchRecentSuggestions;
+
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class RegularSearchFragment extends SearchFragment{
 
@@ -36,7 +37,7 @@ public class RegularSearchFragment extends SearchFragment{
 
   }
 
-  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(Account account){
+  public Loader<MusicSearchLoader.MusicSearchResult> getLoader(UDJAccount account){
     String searchQuery = getActivity().getIntent().getStringExtra(SearchManager.QUERY);
     return new RegularSearchLoader(getActivity(), searchQuery, account);
   }

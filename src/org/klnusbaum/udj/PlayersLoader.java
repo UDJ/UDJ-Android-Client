@@ -25,10 +25,6 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.location.Location;
 import android.util.Log;
 import android.content.Context;
-import android.accounts.OperationCanceledException;
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.AuthenticatorException;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,6 +33,7 @@ import org.apache.http.auth.AuthenticationException;
 
 import org.json.JSONException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.network.ServerConnection;
 import org.klnusbaum.udj.containers.Player;
 
@@ -66,17 +63,15 @@ public class PlayersLoader extends
 
   private static final String TAG = "PLAYERS_LOADER";
 
-  private AccountManager am;
-  private Account account;
+  private UDJAccount account;
   private Location location;
   private String searchQuery;
   private List<Player> players;
   private boolean locationSearch;
 
-    
-  public PlayersLoader(Context context, Account account, Location location){
+
+  public PlayersLoader(Context context, UDJAccount account, Location location){
     super(context);
-    am = AccountManager.get(context);
     this.account = account;
     this.location = location;
     this.players = null;
@@ -84,9 +79,8 @@ public class PlayersLoader extends
     locationSearch = true;
   }
 
-  public PlayersLoader(Context context, Account account, String query){
+  public PlayersLoader(Context context, UDJAccount account, String query){
     super(context);
-    am = AccountManager.get(context);
     this.account = account;
     this.location = null;
     this.players = null;
@@ -112,55 +106,37 @@ public class PlayersLoader extends
       return new PlayersLoaderResult(null, PlayerLoaderError.NO_CONNECTION);
     }
     else{
-      return doSearch(true);
+      return doSearch();
     }
   }
 
-  private PlayersLoaderResult doSearch(boolean attemptReauth){
-    String authToken = "";
+  private PlayersLoaderResult doSearch(){
+    String ticketHash = account.getTicketHash();
     try{
-      authToken = am.blockingGetAuthToken(account, "", true); 
       if(locationSearch){
         Log.d(TAG, "Doing location search");
-        return doLocationSearch(authToken);
+        return doLocationSearch(ticketHash);
       }
       else{
         Log.d(TAG, "Doing name search");
-        return doNameSearch(authToken);
+        return doNameSearch(ticketHash);
       }
     }
     catch(IOException e){
       Log.e(TAG, "IO exception");
       Log.d(TAG, e.getMessage());
     }
-    catch(AuthenticatorException e){
-      Log.e(TAG, "Authenticator exception");
-      //TODO notify the user
-    }
-    catch(OperationCanceledException e){
-      Log.e(TAG, "Operation cancelced exception");
-      //TODO notify user
-    }
     catch(JSONException e){
       Log.e(TAG, "Json exception");
       Log.e(TAG, e.getMessage());
-      //TODO notify the user
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.e(TAG, "Soft auth fail");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-        return doSearch(false);
-      }
-      else{
-        //TODO notify user
-        Log.e(TAG, "Hard auth fail");
-      }
+      Log.e(TAG, "Hard auth fail");
     }
     return new PlayersLoaderResult(
       null, PlayerLoaderError.AUTHENTICATION_ERROR);
   }
-        
+
   private PlayersLoaderResult doLocationSearch(String authToken)
     throws AuthenticationException, JSONException, IOException
   {

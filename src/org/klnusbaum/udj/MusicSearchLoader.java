@@ -22,10 +22,6 @@ import android.support.v4.content.AsyncTaskLoader;
 
 import android.content.Context;
 import android.util.Log;
-import android.accounts.OperationCanceledException;
-import android.accounts.AuthenticatorException;
-import android.accounts.AccountManager;
-import android.accounts.Account;
 
 import java.util.List;
 import java.io.IOException;
@@ -35,6 +31,7 @@ import org.json.JSONException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.ParseException;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.containers.LibraryEntry;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;
 import org.klnusbaum.udj.exceptions.PlayerInactiveException;
@@ -78,9 +75,9 @@ public abstract class MusicSearchLoader
     }
   }
 
-  private Account account;
+  private UDJAccount account;
 
-  public MusicSearchLoader(Context context, Account account){
+  public MusicSearchLoader(Context context, UDJAccount account){
     super(context);
     this.account = account;
   }
@@ -90,28 +87,11 @@ public abstract class MusicSearchLoader
   }
 
   private MusicSearchResult attemptSearch(boolean attemptReauth){
-    AccountManager am = AccountManager.get(getContext());
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(IOException e){
-      //TODO this might actually be an auth error
-      return new MusicSearchResult(null, 
-        MusicSearchError.AUTHENTICATION_ERROR);
-    }
-    catch(AuthenticatorException e){
-      return new MusicSearchResult(null, 
-        MusicSearchError.AUTHENTICATION_ERROR);
-    }
-    catch(OperationCanceledException e){
-      return new MusicSearchResult(null, 
-        MusicSearchError.AUTHENTICATION_ERROR);
-    }
+    String ticketHash = account.getTicketHash();
+    String playerId = account.getUserData(getContext(), Constants.LAST_PLAYER_ID_DATA);
 
     try{
-      String playerId = am.getUserData(account, Constants.LAST_PLAYER_ID_DATA);
-      return doSearch(playerId, authToken);
+      return doSearch(playerId, ticketHash);
     }
     catch(JSONException e){
       return new MusicSearchResult(null, 
@@ -124,15 +104,8 @@ public abstract class MusicSearchLoader
       return new MusicSearchResult(null, MusicSearchError.SERVER_ERROR);
     }
     catch(AuthenticationException e){
-      if(attemptReauth){
-        Log.d(TAG, "soft auth failure");
-        am.invalidateAuthToken(Constants.ACCOUNT_TYPE, authToken);
-        return attemptSearch(false);
-      }
-      else{
-        Log.d(TAG, "hard auth failure");
-        return new MusicSearchResult(null, MusicSearchError.AUTHENTICATION_ERROR);
-      }
+      Log.d(TAG, "hard auth failure");
+      return new MusicSearchResult(null, MusicSearchError.AUTHENTICATION_ERROR);
     }
     catch(PlayerInactiveException e){
       return new MusicSearchResult(null, MusicSearchError.PLAYER_INACTIVE_ERROR);

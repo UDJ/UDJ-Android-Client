@@ -21,12 +21,9 @@ package org.klnusbaum.udj;
 
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
-import android.accounts.OperationCanceledException;
-import android.accounts.AuthenticatorException;
-import android.accounts.AccountManager;
-import android.accounts.Account;
 import android.content.Context;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.network.ServerConnection;
 import org.klnusbaum.udj.network.RESTProcessor;
 import org.klnusbaum.udj.containers.ActivePlaylistEntry;
@@ -70,40 +67,22 @@ public class PlaylistLoader extends AsyncTaskLoader<PlaylistLoader.PlaylistResul
     }
   }
 
-  private Account account;
+  private UDJAccount account;
   private Context context;
 
-  public PlaylistLoader(Context context, Account account){
+  public PlaylistLoader(Context context, UDJAccount account){
     super(context);
     this.account = account;
     this.context = context;
   }
 
   public PlaylistResult loadInBackground(){
-    return attemptLoad(true);
-  }
-
-  private PlaylistResult attemptLoad(boolean attemptReauth){
-    AccountManager am = AccountManager.get(getContext());
-    String authToken = "";
-    try{
-      authToken = am.blockingGetAuthToken(account, "", true);
-    }
-    catch(IOException e){
-      //TODO this might actually be an auth error
-      return new PlaylistResult(null, PlaylistLoadError.AUTHENTICATION_ERROR);
-    }
-    catch(AuthenticatorException e){
-      return new PlaylistResult(null, PlaylistLoadError.AUTHENTICATION_ERROR);
-    }
-    catch(OperationCanceledException e){
-      return new PlaylistResult(null, PlaylistLoadError.AUTHENTICATION_ERROR);
-    }
+    String ticketHash = account.getTicketHash();
+    String playerId = account.getUserData(context, Constants.LAST_PLAYER_ID_DATA);
 
     try{
-      String playerId = am.getUserData(account, Constants.LAST_PLAYER_ID_DATA);
-      JSONObject serverResult = ServerConnection.getActivePlaylist(playerId, authToken);
-      List<ActivePlaylistEntry> toReturn = RESTProcessor.processActivePlaylist(serverResult, am, account, context);
+      JSONObject serverResult = ServerConnection.getActivePlaylist(playerId, ticketHash);
+      List<ActivePlaylistEntry> toReturn = RESTProcessor.processActivePlaylist(serverResult, account, context);
       return new PlaylistResult(toReturn);
     }
     catch(JSONException e){

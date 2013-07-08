@@ -18,7 +18,6 @@
  */
 package org.klnusbaum.udj;
 
-import android.accounts.Account;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.view.View;
@@ -29,12 +28,12 @@ import android.app.SearchManager;
 import android.widget.ListView;
 import android.util.Log;
 import android.app.Activity;
-import android.accounts.Account;
 
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.app.ListFragment;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 
 import java.util.List;
 
@@ -52,8 +51,8 @@ public class ArtistsDisplayFragment extends ListFragment
   //private ArtistsAdapter artistsAdapter;
   private ArrayAdapter<String> artistsAdapter;
 
-  private Account getAccount(){
-    return (Account)getArguments().getParcelable(Constants.ACCOUNT_EXTRA);
+  private UDJAccount getAccount(){
+    return (UDJAccount)getArguments().getParcelable(Constants.ACCOUNT_EXTRA);
   }
 
   @Override

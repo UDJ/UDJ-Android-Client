@@ -18,14 +18,14 @@
  */
 package org.klnusbaum.udj;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 import org.klnusbaum.udj.network.PlaylistSyncService;
 import org.klnusbaum.udj.containers.ActivePlaylistEntry;
+import org.klnusbaum.udj.exceptions.NoAccountException;
 
 
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -64,8 +64,7 @@ public class PlaylistFragment extends PullToRefreshListFragment implements
 
   private static final String TAG = "PlaylistFragment";
   private static final int PLAYLIST_LOADER_ID = 0;
-  private Account account;
-  private AccountManager am;
+  private UDJAccount account;
   private String userId;
   /**
    * Adapter used to help display the contents of the playlist.
@@ -80,9 +79,15 @@ public class PlaylistFragment extends PullToRefreshListFragment implements
   @Override
   public void onActivityCreated(Bundle savedInstanceState) {
     super.onActivityCreated(savedInstanceState);
-    account = Utils.basicGetUdjAccount(getActivity());
-    am = AccountManager.get(getActivity());
-    userId = am.getUserData(account, Constants.USER_ID_DATA);
+    try{
+      account = UDJAccount.getUDJAccount();
+    }
+    catch(NoAccountException e){
+      Log.wtf(TAG, "HOLY SHIT. we got into the PlaylistFragment without "+
+                   "an account some how. I'm pretty sure shit is about to explode.");
+      account = null;
+    }
+    userId = account.getUserData(getActivity(), Constants.USER_ID_DATA);
     setEmptyText(getActivity().getString(R.string.no_playlist_items));
     getPullToRefreshListView().setOnRefreshListener(this);
     playlistAdapter = new PlaylistAdapter(getActivity(), null, this, userId, account);
@@ -129,7 +134,7 @@ public class PlaylistFragment extends PullToRefreshListFragment implements
       (ActivePlaylistEntry) getPullToRefreshListView().getRefreshableView().getItemAtPosition(info.position);
     MenuInflater inflater = getActivity().getMenuInflater();
 
-    if(Utils.isCurrentPlayerOwner(am, account)){
+    if(Utils.isCurrentPlayerOwner(context, account)){
       setupOwnerContext(playlistEntry.isCurrentSong(), menu, inflater);
     }
     else{
@@ -182,7 +187,7 @@ public class PlaylistFragment extends PullToRefreshListFragment implements
   private void shareSong(int position) {
     ActivePlaylistEntry toShare = getItemAtPosition(position);
     String songTitle = toShare.getSong().getTitle();
-    String playerName = am.getUserData(account, Constants.PLAYER_NAME_DATA);
+    String playerName = account.getUserData(context, Constants.PLAYER_NAME_DATA);
     Intent shareIntent = new Intent(Intent.ACTION_SEND);
     shareIntent.setType("text/plain");
     shareIntent.putExtra(android.content.Intent.EXTRA_TEXT,

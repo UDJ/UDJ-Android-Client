@@ -20,7 +20,6 @@ package org.klnusbaum.udj;
 
 
 import android.content.Context;
-import android.accounts.Account;
 
 import java.util.List;
 import java.io.IOException;
@@ -35,13 +34,14 @@ import org.klnusbaum.udj.containers.LibraryEntry;
 import org.klnusbaum.udj.exceptions.NoLongerInPlayerException;
 import org.klnusbaum.udj.exceptions.PlayerInactiveException;
 import org.klnusbaum.udj.exceptions.KickedException;
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class RegularSearchLoader extends MusicSearchLoader{
 
   private String query;
 
   public RegularSearchLoader(
-    Context context, String query, Account account)
+    Context context, String query, UDJAccount account)
   {
     super(context, account);
     this.query = query;

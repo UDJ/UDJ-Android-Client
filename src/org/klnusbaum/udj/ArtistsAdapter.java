@@ -28,7 +28,6 @@ import android.database.DataSetObserver;
 import android.view.LayoutInflater;
 import android.widget.Toast;
 import android.content.Intent;
-import android.accounts.Account;
 /*
 import android.widget.Filterable;
 import android.widget.Filter;
@@ -36,20 +35,21 @@ import android.widget.Filter;
 
 import java.util.List;
 
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class ArtistsAdapter implements ListAdapter{
   private static final int ARTIST_ENTRY_VIEW_TYPE = 0;
   private List<String> artists;
   private Context context;
-  private Account account;
+  private UDJAccount account;
 
-  public ArtistsAdapter(Context context, Account account){
+  public ArtistsAdapter(Context context, UDJAccount account){
     this.artists = null;
     this.context = context;
     this.account = account;
   }
 
-  public ArtistsAdapter(Context context, List<String> artists, Account account){
+  public ArtistsAdapter(Context context, List<String> artists, UDJAccount account){
     this.artists = artists;
     this.context = context;
     this.account = account;

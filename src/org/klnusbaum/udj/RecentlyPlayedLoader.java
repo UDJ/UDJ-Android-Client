@@ -20,7 +20,6 @@ package org.klnusbaum.udj;
 
 
 import android.content.Context;
-import android.accounts.Account;
 
 import java.util.List;
 import java.io.IOException;
@@ -38,7 +37,7 @@ import org.klnusbaum.udj.exceptions.KickedException;
 
 public class RecentlyPlayedLoader extends MusicSearchLoader{
 
-  public RecentlyPlayedLoader(Context context, Account account){
+  public RecentlyPlayedLoader(Context context, UDJAccount account){
     super(context, account);
   }
 

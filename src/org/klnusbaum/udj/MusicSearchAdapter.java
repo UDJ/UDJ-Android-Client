@@ -28,7 +28,6 @@ import android.database.DataSetObserver;
 import android.view.LayoutInflater;
 import android.widget.Toast;
 import android.content.Intent;
-import android.accounts.Account;
 import android.app.SearchManager;
 import android.graphics.Color;
 import android.text.Html;
@@ -37,14 +36,15 @@ import java.util.List;
 
 import org.klnusbaum.udj.containers.LibraryEntry;
 import org.klnusbaum.udj.network.PlaylistSyncService;
+import org.klnusbaum.udj.auth.UDJAccount;
 
 public class MusicSearchAdapter extends StringIdableAdapter<LibraryEntry>{
 
   private Context context;
-  private Account account;
+  private UDJAccount account;
   public static final int LIB_ENTRY_VIEW_TYPE = 0;
 
-  public MusicSearchAdapter(Context context, Account account){
+  public MusicSearchAdapter(Context context, UDJAccount account){
     super(null);
     this.context = context;
     this.account = account;
@@ -53,7 +53,7 @@ public class MusicSearchAdapter extends StringIdableAdapter<LibraryEntry>{
   public MusicSearchAdapter(
     Context context,
     List<LibraryEntry> entries,
-    Account account
+    UDJAccount account
   )
   {
     super(entries);
