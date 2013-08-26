@@ -111,6 +111,10 @@
   <string name="banned_from_player">You\'ve been banned from that player.</string>
   <string name="location_based_search">Nearby Players</string>
   <string name="udjaccount">UDJ Account</string>
+  <string name="login_error_no_network">No Network Connection</string>
+  <string name="login_error_server">Server Error. Try Again.</string>
+  <string name="login_error_auth">Bad username and password.</string>
+  <string name="login_error_api">App out-of-date. Please update.</string>
 
 
 </resources>

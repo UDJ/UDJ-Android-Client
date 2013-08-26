@@ -20,8 +20,8 @@
 <manifest
       xmlns:android="http://schemas.android.com/apk/res/android"
       package="org.klnusbaum.udj"
-      android:versionCode="15"
-      android:versionName="1.7.3">
+      android:versionCode="16"
+      android:versionName="1.8">
 
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="16"/>
 
@@ -33,15 +33,21 @@
         android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application android:label="@string/app_name" android:icon="@drawable/udjlauncher">
-        <activity android:name=".PlayerSelectorActivity"
+        <activity android:name=".auth.AuthActivity"
           android:label="@string/app_name"
           android:theme="@style/Theme.Sherlock"
+          android:excludeFromRecents="true"
         >
-        <!-- android:launchMode="singleTop" -->
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".PlayerSelectorActivity"
+          android:theme="@style/Theme.Sherlock"
+          android:label="@string/app_name"
+        >
           <intent-filter>
             <action android:name="android.intent.action.SEARCH"/> 
           </intent-filter>
@@ -49,6 +55,7 @@
             android:name="android.app.searchable"
             android:resource="@xml/player_searchable"
           />
+
         </activity>
         <activity
           android:name=".PlayerActivity"
@@ -77,11 +84,6 @@
             android:resource="@xml/song_searchable"
           />
         </activity>
-        <activity 
-            android:name=".auth.AuthActivity"
-            android:excludeFromRecents="true"
-        />
-
 
        <activity
          android:name="RandomSearchActivity"
